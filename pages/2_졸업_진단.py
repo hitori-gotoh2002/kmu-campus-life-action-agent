@@ -5,7 +5,9 @@ load_dotenv()
 os.environ["DEMO_MODE"] = "false"
 
 import streamlit as st
-from modules import transcript, graduation
+from modules import transcript, graduation, store
+
+store.load_keys_into_env()
 
 st.set_page_config(page_title="졸업 진단", page_icon="🎓", layout="centered")
 st.title("🎓 졸업 진단")
@@ -15,12 +17,19 @@ st.caption("성적증명서(PDF)를 올리면 이수학점을 분석해 졸업�
 CATS = ["전공선택", "전공필수", "기초교양", "핵심교양", "교양선택", "자유교양", "일반선택"]
 YEARS = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"]
 
+# 새로고침해도 유지 — 백엔드(store)에서 복원
+if "tdata" not in st.session_state and store.kv_get("transcript"):
+    st.session_state.tdata = store.kv_get("transcript")
+if "diag" not in st.session_state and store.kv_get("graduation"):
+    st.session_state.diag = store.kv_get("graduation")
+
 # ── 1) 업로드 + 비전 추출 ──────────────────────────────────────
 up = st.file_uploader("성적증명서 PDF", type="pdf")
 if up and st.button("📄 성적증명서 분석", use_container_width=True):
     with st.spinner("성적증명서 분석 중 (LLM 비전)…"):
         try:
             st.session_state.tdata = transcript.extract(up.read())
+            store.kv_set("transcript", st.session_state.tdata)   # 영속
         except Exception as e:
             st.error(f"추출 실패: {e}")
 
@@ -50,6 +59,7 @@ if "tdata" in st.session_state:
               "summary": {"total_credits": total, "gpa": gpa},
               "by_category": {k: v for k, v in edited.items() if v}}
         st.session_state.diag = graduation.diagnose(td)
+        store.kv_set("graduation", st.session_state.diag)        # 영속(새로고침 유지)
         graduation.sync_unmet_to_profile(st.session_state.diag["unmet"])
         st.toast("진단 완료 · 미충족요건을 추천 시스템에 반영했습니다")
 

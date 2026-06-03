@@ -106,18 +106,10 @@ def diagnose(transcript_data: dict) -> dict:
 
 
 def sync_unmet_to_profile(unmet: list) -> None:
-    """미충족 요건 요약을 '내 프로필' DB 의 미충족졸업요건에 기록 → 추천 반영."""
-    db = os.getenv("NOTION_PROFILE_DB_ID")
-    if not db or not unmet:
+    """미충족 요건 요약을 로컬 백엔드(store.profile)에 기록 → 추천 반영."""
+    if not unmet:
         return
+    from modules import store
     summary = "; ".join(unmet)
-    try:
-        for p in _client().databases.query(database_id=db, page_size=100)["results"]:
-            t = p["properties"].get("항목", {}).get("title", [])
-            if t and t[0]["plain_text"].strip() == "미충족졸업요건":
-                _client().pages.update(page_id=p["id"], properties={
-                    "값": {"rich_text": [{"text": {"content": summary[:1900]}}]}})
-                print(f"   [graduation] 미충족졸업요건 → 프로필: {summary[:60]}")
-                return
-    except Exception as e:
-        print(f"   [graduation] 프로필 반영 실패({e})")
+    store.set_profile({"미충족졸업요건": summary})
+    print(f"   [graduation] 미충족졸업요건 → 프로필: {summary[:60]}")

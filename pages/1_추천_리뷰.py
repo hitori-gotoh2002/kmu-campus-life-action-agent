@@ -7,7 +7,9 @@ load_dotenv()
 os.environ["DEMO_MODE"] = "false"
 
 import streamlit as st
-from modules import history, executor, classifier
+from modules import history, executor, classifier, store
+
+store.load_keys_into_env()
 
 st.set_page_config(page_title="추천 리뷰", page_icon="📋", layout="centered")
 

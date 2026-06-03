@@ -110,22 +110,13 @@ _SYNC_MAP = {
 
 
 def sync_to_profile_db(data: dict) -> int:
-    """추출 프로필을 '내 프로필' DB 값에 반영. 갱신 건수 반환.
+    """추출 프로필을 로컬 백엔드(store.profile)에 저장. 갱신 건수 반환.
     (미충족졸업요건/주간가용시간 등 포트폴리오로 알 수 없는 항목은 건드리지 않음)"""
-    notion = _client()
-    db = os.getenv("NOTION_PROFILE_DB_ID")
-    rows = notion.databases.query(database_id=db, page_size=100)["results"]
-    updated = 0
-    for p in rows:
-        t = p["properties"].get("항목", {}).get("title", [])
-        item = t[0]["plain_text"].strip() if t else ""
-        if item in _SYNC_MAP:
-            val = _SYNC_MAP[item](data)
-            if val:
-                notion.pages.update(page_id=p["id"], properties={
-                    "값": {"rich_text": [{"text": {"content": val[:1900]}}]}})
-                updated += 1
-    return updated
+    from modules import store
+    vals = {k: fn(data) for k, fn in _SYNC_MAP.items()}
+    vals = {k: v for k, v in vals.items() if v}
+    store.set_profile(vals)
+    return len(vals)
 
 
 def analyze_and_sync(verbose: bool = True) -> dict:

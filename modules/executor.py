@@ -147,15 +147,14 @@ def execute_actions(candidate: dict) -> None:
     a = candidate["analysis"]
 
     if _is_demo():
-        print("[6] 승인 콜백 - 자율 실행 (demo)")
-        print(f"   [notion-schedule] 일정 DB에 '{n.title} 준비' 블록 "
-              f"{a.estimated_hours_needed}h 를 공강 시간대에 분할 등록 완료")
-        print(f"   [notion-kanban]   칸반 'To Do' 에 티켓 생성 + 서류 초안 뼈대 작성 완료")
-        print(f"   [notion-kanban]   초안 섹션: 지원동기 / 프로젝트경험 / 기대효과\n")
+        print("[6] 승인 - 캘린더 등록 (demo)")
+        print(f"   [calendar] '{n.title} 준비' {a.estimated_hours_needed}h 캘린더 등록(demo)")
+        print("   [info] 추천 상세(근거·체크리스트·초안)는 웹/백엔드에서 열람\n")
         return
 
+    # 노션에는 캘린더(준비 일정)만 기록. 추천 상세는 로컬 백엔드(store)에 보관.
     _create_notion_schedule_block(n.title, a.estimated_hours_needed)
-    _create_notion_ticket(n, a)
+    print("   [executor] 노션 캘린더에 '준비' 일정 등록 완료 (추천 상세는 웹에서 확인)")
 
 
 def _create_notion_schedule_block(title: str, hours: int) -> None:

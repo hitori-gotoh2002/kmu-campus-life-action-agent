@@ -24,7 +24,9 @@ except ImportError:
 
 from modules import (scraper, document_ai, analyzer, validator, executor,
                      profile, classifier, history, preferences, digest,
-                     deadline, feedback)
+                     deadline, feedback, store)
+
+store.load_keys_into_env()   # 웹에서 저장한 API 키도 CLI 에서 사용
 
 
 def banner(text: str) -> None:
@@ -66,9 +68,15 @@ def _gather_candidates(ctx: dict) -> list:
         if result.is_relevant and ok:
             v = validator.validate_schedule(result.estimated_hours_needed, ctx)  # [4]
             if v["passed"]:
-                lok, _lr = analyzer.llm_critic(n, result, ctx)    # [3+] LLM 검증관
-                if lok:
-                    passed = True
+                passed = True
+                # LLM 검증관은 기본 '비차단'(분야별 추천 다양성 우선).
+                # CRITIC_LLM=strict 일 때만 프로필 부적합을 반려해 1순위 정밀도를 높임.
+                if os.getenv("CRITIC_LLM", "off").lower() == "strict":
+                    lok, _lr = analyzer.llm_critic(n, result, ctx)
+                    if not lok:
+                        passed = False
+                        print("   → LLM 검증관 반려, 제외")
+                if passed:
                     urg = deadline.urgency_bonus(n)
                     adj = fb.get(n.category, 0)
                     candidates.append({
@@ -77,8 +85,6 @@ def _gather_candidates(ctx: dict) -> list:
                         "rank_score": result.suitability_score + urg + adj,
                         "draft_link": f"https://notion.so/draft/{abs(hash(n.title)) % 100000}",
                     })
-                else:
-                    print("   → LLM 검증관 반려, 제외")
             else:
                 print("   → 일정 부족(HOLD), 제외")
         else:

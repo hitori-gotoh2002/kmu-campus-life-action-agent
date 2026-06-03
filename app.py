@@ -9,7 +9,9 @@ load_dotenv()
 os.environ["DEMO_MODE"] = "false"
 
 import streamlit as st
-from modules import profile
+from modules import profile, store
+
+store.load_keys_into_env()   # 웹에서 저장한 API 키 적용
 
 st.set_page_config(page_title="KMU 캠퍼스 라이프 에이전트", page_icon="🎓", layout="centered")
 
