@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KMU 캠퍼스 라이프 에이전트 · 통합 설계도</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Malgun Gothic","맑은 고딕",-apple-system,sans-serif;
+    background:linear-gradient(160deg,#eef2f7,#e3ecf5);color:#1f2a37;padding:36px 16px;line-height:1.55;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @media print{body{padding:12px 0}.card,.lane,.agent,.dbx{break-inside:avoid;page-break-inside:avoid}}
+  .wrap{max-width:980px;margin:0 auto}
+  header{text-align:center;margin-bottom:16px}
+  header h1{font-size:27px;color:#15314b;letter-spacing:-.5px}
+  header .sub{font-size:14.5px;color:#4a5a6a;margin-top:7px}
+  h2.sec{font-size:19px;color:#15314b;margin:30px 0 13px;padding-bottom:7px;border-bottom:2px solid #cfdae6}
+  .ai{font-size:10px;background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:4px;font-weight:700}
+
+  /* 입력 데이터 */
+  .dbs{display:flex;gap:9px;flex-wrap:wrap}
+  .dbx{flex:1;min-width:150px;background:#fff;border:1px solid #dde5ee;border-radius:10px;padding:11px 13px}
+  .dbx .n{font-weight:700;color:#1e293b;font-size:13.5px}
+  .dbx .d{font-size:12px;color:#5a6776;margin-top:4px}
+  .src{border-left:4px solid #8b5cf6}
+
+  /* 시스템 2개 레인 */
+  .lanes{display:flex;gap:14px;flex-wrap:wrap}
+  .lane{flex:1;min-width:300px;background:#fff;border:1px solid #dde5ee;border-radius:14px;padding:16px 18px;
+    box-shadow:0 4px 12px rgba(20,49,75,.05)}
+  .lane.rec{border-top:5px solid #3b82f6}
+  .lane.grad{border-top:5px solid #10a37f}
+  .lane h3{font-size:16px;color:#15314b;margin-bottom:4px}
+  .lane .step{font-size:13px;color:#41525f;padding:5px 0;border-bottom:1px dashed #eef1f4}
+  .lane .step b{color:#15314b}
+  .lane .step .ai{margin-left:4px}
+
+  .glue{background:#fff8e6;border:1px dashed #f0c75e;border-radius:12px;padding:12px 16px;margin:14px 0;
+    text-align:center;font-size:13.5px;color:#8a6d1a}
+
+  /* 에이전트 표 */
+  table{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border-radius:10px;overflow:hidden}
+  th,td{border:1px solid #e2e8f0;padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:#f1f5f9;color:#334155;font-size:12px}
+  .grp{background:#eef2f7;font-weight:700;color:#475569}
+
+  .web{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .pg{flex:1;min-width:170px;background:#fff;border:1px solid #dde5ee;border-radius:10px;padding:12px 14px}
+  .pg .t{font-weight:700;color:#15314b}
+  .pg .d{font-size:12px;color:#5a6776;margin-top:4px}
+
+  .stack{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .chip{background:#fff;border:1px solid #e0e6ed;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:600;color:#3a4a5a}
+  .arrow{text-align:center;color:#9bb0c4;font-size:16px;margin:3px 0}
+  footer{text-align:center;font-size:11.5px;color:#8794a2;margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎓 KMU 캠퍼스 라이프 에이전트 — 통합 설계도</h1>
+    <div class="sub">하나의 웹 · 두 시스템(커리어 추천 + 졸업 진단)이 <b>사용자 데이터를 공유</b>해 더 정확히 추천</div>
+  </header>
+
+  <!-- 입력 데이터 -->
+  <h2 class="sec">① 입력 데이터 (전부 노션 + 업로드)</h2>
+  <div class="dbs">
+    <div class="dbx src"><div class="n">📁 포트폴리오</div><div class="d">자유서술+프로젝트 DB → LLM 분석 → 프로필</div></div>
+    <div class="dbx src"><div class="n">📅 내 캘린더</div><div class="d">시간표(수업·학회·스터디) → 가용시간</div></div>
+    <div class="dbx src"><div class="n">📄 성적증명서(PDF)</div><div class="d">웹 업로드 → 비전 추출 → 이수학점</div></div>
+    <div class="dbx src"><div class="n">📜 졸업요건(7년)</div><div class="d">입학년도별 기준학점(JSON+노션)</div></div>
+  </div>
+  <div class="arrow">▼ 공유 프로필(노션 '내 프로필' DB)로 취합 ▼</div>
+
+  <!-- 두 시스템 -->
+  <h2 class="sec">② 두 시스템</h2>
+  <div class="lanes">
+    <div class="lane rec">
+      <h3>📋 커리어 추천</h3>
+      <div class="step"><b>수집</b> 국민대2+링커리어2(GraphQL)</div>
+      <div class="step"><b>분류</b> 7분야(장학·공모전·대외활동·학사·채용·자격증·기타)</div>
+      <div class="step"><b>중복필터</b> 이력 DB로 신규만</div>
+      <div class="step"><b>마감 가드</b> 만료 제외·임박 가점</div>
+      <div class="step"><b>맥락분석</b> 적합도·소요시간·역량가중<span class="ai">AI</span></div>
+      <div class="step"><b>Critic</b> 규칙 + LLM 검증관<span class="ai">AI</span></div>
+      <div class="step"><b>일정검증</b> 캘린더 공강 + 30% 버퍼</div>
+      <div class="step"><b>피드백</b> 승인/거절 학습 보정</div>
+      <div class="step"><b>분야별 랭킹</b> → 텔레그램 추천서 / 웹 리뷰</div>
+      <div class="step"><b>실행</b> 노션 캘린더 + 칸반 티켓</div>
+    </div>
+    <div class="lane grad">
+      <h3>🎓 졸업 진단</h3>
+      <div class="step"><b>성적증명서 업로드</b> (웹)</div>
+      <div class="step"><b>비전 추출</b> 총학점·GPA·이수구분별<span class="ai">AI</span></div>
+      <div class="step"><b>사람 검증</b> 추출값 확인·수정(입학년도 포함)</div>
+      <div class="step"><b>요건 비교</b> 이수 vs 입학년도별 기준학점</div>
+      <div class="step"><b>진단</b> 구분별 부족·위험도(결정론적)</div>
+      <div class="step"><b>졸업인증제</b> 심화/다·부전공 안내</div>
+      <div class="step"><b>대시보드</b> 게이지·부족학점 시각화</div>
+      <div class="step" style="border:none"><b>미충족요건 산출</b> → 추천으로 전달</div>
+    </div>
+  </div>
+  <div class="glue">🔗 <b>연결고리</b> — 졸업 진단의 <b>부족 학점</b>이 '내 프로필 · 미충족졸업요건'에 기록 →
+    추천이 <b>계절학기·전공 공지를 우선</b> 추천</div>
+
+  <!-- 통합 웹 -->
+  <h2 class="sec">③ 통합 웹 (Streamlit 멀티페이지)</h2>
+  <div class="web">
+    <div class="pg"><div class="t">🏠 홈</div><div class="d">프로필 요약 + 두 기능 진입</div></div>
+    <div class="pg"><div class="t">📋 추천 리뷰</div><div class="d">분야별 추천 → 항목별 노션 추가/무시</div></div>
+    <div class="pg"><div class="t">🎓 졸업 진단</div><div class="d">성적증명서 업로드 → 진단 대시보드</div></div>
+  </div>
+
+  <!-- 에이전트 표 -->
+  <h2 class="sec">④ 전체 에이전트</h2>
+  <table>
+    <tr><th>그룹</th><th>에이전트(파일)</th><th>역할</th></tr>
+    <tr><td class="grp" rowspan="4">데이터·프로필</td><td>Portfolio Analyzer (portfolio.py) <span class="ai">AI</span></td><td>포트폴리오→프로필 추출·동기화</td></tr>
+    <tr><td>Profile Sync (profile.py)</td><td>노션 프로필 DB→분석용 ctx</td></tr>
+    <tr><td>History Store (history.py)</td><td>이력·중복방지·웹 데이터 허브</td></tr>
+    <tr><td>Preferences (preferences.py)</td><td>분야별 수신주기</td></tr>
+    <tr><td class="grp" rowspan="6">추천</td><td>Scraper (scraper.py)</td><td>4소스 수집(HTML+GraphQL)</td></tr>
+    <tr><td>Classifier (classifier.py)</td><td>7분야 분류(규칙+LLM)</td></tr>
+    <tr><td>Document AI (document_ai.py)</td><td>첨부 PDF 평가기준 파싱</td></tr>
+    <tr><td>Analyzer (analyzer.py) <span class="ai">AI</span></td><td>적합도·소요시간·역량가중</td></tr>
+    <tr><td>Critic (analyzer.py) <span class="ai">AI</span></td><td>규칙 보정 + LLM 검증관</td></tr>
+    <tr><td>Deadline / Feedback / Validator</td><td>마감·학습·일정검증</td></tr>
+    <tr><td class="grp" rowspan="2">졸업</td><td>Transcript (transcript.py) <span class="ai">AI</span></td><td>성적증명서 비전 추출</td></tr>
+    <tr><td>Graduation (graduation.py)</td><td>학점 진단·부족·위험도</td></tr>
+    <tr><td class="grp" rowspan="3">전달·실행</td><td>Digest (digest.py)</td><td>분야별 추천서</td></tr>
+    <tr><td>Executor (executor.py)</td><td>노션 캘린더+칸반 기록</td></tr>
+    <tr><td>Scheduler (scheduler.py)</td><td>매일/매주 자동 발송</td></tr>
+  </table>
+
+  <!-- 스택 -->
+  <h2 class="sec">⑤ 기술 스택</h2>
+  <div class="stack">
+    <span class="chip">Python</span><span class="chip">OpenAI (분석·비전·검증)</span>
+    <span class="chip">Notion API (데이터 허브)</span><span class="chip">Telegram Bot</span>
+    <span class="chip">Streamlit (웹)</span><span class="chip">requests/bs4 · GraphQL</span>
+    <span class="chip">pypdfium2 (PDF 렌더)</span><span class="chip">APScheduler</span>
+  </div>
+
+  <footer>KMU 캠퍼스 라이프 에이전트 · 커리어 추천 + 졸업 진단 통합 · 현재 구현 기준</footer>
+</div>
+</body>
+</html>

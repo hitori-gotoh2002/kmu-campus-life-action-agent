@@ -1,0 +1,25 @@
+# === 데이터 수집 / 문서 파싱 ===
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+pdfplumber>=0.11.0
+
+# === 스키마 강제 / 구조화 출력 ===
+pydantic>=2.6.0
+
+# === LLM (둘 중 환경에 맞는 것을 사용) ===
+google-generativeai>=0.8.0   # Gemini Flash
+openai>=1.30.0               # OpenAI Structured Outputs (대체용)
+
+# === 외부 액션 API (일정+칸반 모두 Notion 으로 통합) ===
+# 3.x 는 databases.query 제거(데이터소스 API 전환)로 호환 불가 → 2.x 고정
+notion-client>=2.2.1,<3
+
+# === 인터랙션 / 환경변수 ===
+python-telegram-bot>=21.0
+python-dotenv>=1.0.1
+
+# === 스케줄러 (digest 자동 발송) ===
+APScheduler>=3.10
+
+# === 웹 리뷰 UI ===
+streamlit>=1.30

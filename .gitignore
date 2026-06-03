@@ -1,0 +1,24 @@
+# ===== 비밀키 (절대 커밋 금지) =====
+.env
+.env.local
+*.key
+credentials.json
+token.json
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ===== Streamlit =====
+.streamlit/secrets.toml
+
+# ===== 임시/진단 스크립트 (관례: _ 로 시작) =====
+_*.py
+
+# ===== 개인 업로드 자료 (성적증명서 등) =====
+uploads/
+*.성적증명서.pdf

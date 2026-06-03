@@ -1,0 +1,23 @@
+{
+  "name": "테스트 학생",
+  "major": "AI빅데이터융합경영학과",
+  "school": "국민대학교",
+  "desired_role": "AI 데이터 사이언티스트",
+
+  "past_projects": [
+    "엽채류 스마트팜 AI 모델링(CVAE, CDCGAN)",
+    "상담사 맞춤형 사회복지 앱 UI 기획"
+  ],
+
+  "high_proficiency": ["NLP", "Generative AI", "Data Modeling"],
+  "low_proficiency": ["Service Planning", "Marketing", "UX Research"],
+
+  "unmet_graduation_requirement": "전공 선택 3학점 부족",
+
+  "scheduling": {
+    "weekly_total_hours": 112,
+    "safe_buffer_ratio": 0.3
+  },
+
+  "interests": ["데이터 분석 경진대회", "AI 해커톤", "산학 프로젝트", "데이터 직무 자격증"]
+}
