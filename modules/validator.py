@@ -1,17 +1,19 @@
 """modules/validator.py
-일정 타당성 검증 에이전트 (Notion 일정 DB 기반).
+일정 타당성 검증 에이전트.
 
-  - 사용자가 직접 입력한 Notion '주간 일정 DB'(요일 + 시작/종료 시간)를 읽어
-    이번 주 고정 일정(수업/학회/회의 등)의 총 Busy 시간을 합산
+  - Notion 캘린더: 회의/모임/회식 등 실제 일정만 읽는다. 유형=수업은 제외.
+  - 웹 시간표 PDF: 수업 고정시간은 로컬 백엔드에 저장된 시간표에서 읽는다.
+  - 국민대 공식 학사일정: 시험기간/시험 직전에는 가용시간을 크게 낮춘다.
   - 순수 공강 = 주간 총 가용시간 - Busy 시간
   - 인간 생활 보호 버퍼: 공강의 70%(safe_ratio=0.7)만 업무에 사용 (30% 여유)
   - safe_free_hours >= estimated_hours_needed 이면 Pass
-
-  * Google Calendar 연동은 제거. 일정 소스를 Notion 하나로 통합.
 """
 from __future__ import annotations
 
+import datetime as dt
 import os
+
+from modules import academic_calendar, timetable
 
 SAFE_RATIO = 0.7  # 30% 안전 버퍼
 
@@ -20,6 +22,8 @@ PROP_TITLE = "일정명"      # title
 PROP_DAY = "요일"          # select: 월/화/수/목/금/토/일
 PROP_START = "시작"        # number 또는 rich_text "09:00"
 PROP_END = "종료"          # number 또는 rich_text "12:00"
+PROP_DATE = "날짜"          # date
+PROP_TYPE = "유형"          # select
 
 
 def _is_demo() -> bool:
@@ -93,20 +97,58 @@ def _read_notion_property(props: dict, name: str):
     if t == "select":
         sel = p.get("select")
         return sel["name"] if sel else None
+    if t == "date":
+        return p.get("date")
     return None
 
 
-def _real_busy_hours() -> float:
-    """실제 Notion 일정 DB를 조회해 주간 Busy 시간 합산."""
+def _week_range(today: dt.date | None = None) -> tuple[dt.datetime, dt.datetime]:
+    today = today or dt.date.today()
+    start = today - dt.timedelta(days=today.weekday())
+    start_dt = dt.datetime.combine(start, dt.time.min)
+    return start_dt, start_dt + dt.timedelta(days=7)
+
+
+def _parse_notion_date(value: dict | None) -> tuple[dt.datetime | None, dt.datetime | None]:
+    if not value:
+        return None, None
+
+    def parse(s: str | None) -> dt.datetime | None:
+        if not s:
+            return None
+        try:
+            return dt.datetime.fromisoformat(s.replace("Z", "+00:00")).replace(tzinfo=None)
+        except ValueError:
+            try:
+                return dt.datetime.combine(dt.date.fromisoformat(s[:10]), dt.time.min)
+            except ValueError:
+                return None
+
+    start = parse(value.get("start"))
+    end = parse(value.get("end")) or start
+    if start and end and end == start and "T" not in (value.get("start") or ""):
+        end = start + dt.timedelta(days=1)
+    return start, end
+
+
+def _overlap_hours(start: dt.datetime, end: dt.datetime, win_start: dt.datetime, win_end: dt.datetime) -> float:
+    s, e = max(start, win_start), min(end, win_end)
+    return max(0.0, (e - s).total_seconds() / 3600)
+
+
+def _real_calendar_busy_hours() -> float:
+    """실제 Notion 캘린더에서 이번 주 실제 일정 Busy 시간 합산. 수업은 제외."""
     from notion_client import Client
 
     notion = Client(auth=os.getenv("NOTION_API_KEY"))
-    # '내 캘린더'(개인 고정 일정)를 우선 사용, 없으면 기존 일정 DB로 폴백
+    # '내 캘린더'는 이제 회의/모임/회식 같은 실제 일정 전용.
     db_id = os.getenv("NOTION_CALENDAR_DB_ID") or os.getenv("NOTION_SCHEDULE_DB_ID")
     if not db_id:
         raise RuntimeError("NOTION_CALENDAR_DB_ID / NOTION_SCHEDULE_DB_ID 가 없습니다.")
 
     rows: list[tuple] = []
+    dated_hours = 0.0
+    win_start, win_end = _week_range()
     cursor = None
     while True:
         kwargs = {"database_id": db_id, "page_size": 100}
@@ -116,33 +158,65 @@ def _real_busy_hours() -> float:
         for page in resp.get("results", []):
             props = page.get("properties", {})
             name = _read_notion_property(props, PROP_TITLE) or "(무제)"
+            event_type = _read_notion_property(props, PROP_TYPE) or ""
+            if event_type == "수업":
+                continue
+            date_value = _read_notion_property(props, PROP_DATE)
+            date_start, date_end = _parse_notion_date(date_value)
+            if date_start and date_end:
+                hours = _overlap_hours(date_start, date_end, win_start, win_end)
+                if hours:
+                    dated_hours += hours
+                    rows.append((name, "", 0, hours))
+                continue
             day = _read_notion_property(props, PROP_DAY) or ""
             start = _parse_time(_read_notion_property(props, PROP_START))
             end = _parse_time(_read_notion_property(props, PROP_END))
-            rows.append((name, day, start, end))
+            if day and end > start:
+                rows.append((name, day, start, end))
         if resp.get("has_more"):
             cursor = resp.get("next_cursor")
         else:
             break
 
-    total = _hours_from_schedule(rows)
-    print(f"   [validator] Notion 일정 DB 읽기: {len(rows)}건 → 주간 Busy {total:.1f}시간")
+    total = round(dated_hours + _hours_from_schedule([r for r in rows if r[2] != 0]), 1)
+    print(f"   [validator] Notion 실제 일정 읽기: {len(rows)}건 → 이번 주 Busy {total:.1f}시간")
+    return total
+
+
+def _timetable_busy_hours() -> float:
+    data = timetable.load()
+    rows = data.get("rows", [])
+    total = timetable.busy_hours(rows)
+    print(f"   [validator] 웹 시간표 읽기: {len(rows)}개 수업 → 주간 수업 Busy {total:.1f}시간")
     return total
 
 
 def validate_schedule(estimated_hours_needed: int, ctx: dict) -> dict:
     """일정 타당성 검증. 결과 dict 반환."""
     weekly_total = ctx.get("scheduling", {}).get("weekly_total_hours", 112)
-    busy = _demo_busy_hours() if _is_demo() else _real_busy_hours()
+    if _is_demo():
+        calendar_busy = _demo_busy_hours()
+        timetable_busy = 0.0
+    else:
+        calendar_busy = _real_calendar_busy_hours()
+        timetable_busy = _timetable_busy_hours()
+    busy = calendar_busy + timetable_busy
+    acad = academic_calendar.pressure()
+    pressure_multiplier = float(acad.get("multiplier", 1.0))
 
     free_hours = max(0.0, weekly_total - busy)
-    safe_free = round(free_hours * SAFE_RATIO, 1)
+    safe_before_academic = round(free_hours * SAFE_RATIO, 1)
+    safe_free = round(safe_before_academic * pressure_multiplier, 1)
     buffer = round(free_hours * (1 - SAFE_RATIO), 1)
 
     passed = safe_free >= estimated_hours_needed
 
     print(f"   [validator] 순수 공강 {free_hours:.0f}h - 30% 버퍼({buffer:.0f}h) "
-          f"= 사용가능 {safe_free:.0f}h  (필요 {estimated_hours_needed}h)")
+          f"= 기본 사용가능 {safe_before_academic:.0f}h")
+    print(f"   [validator] 국민대 학사일정: {acad.get('label')} "
+          f"({acad.get('reason') or '특이 일정 없음'}) ×{pressure_multiplier:.2f} "
+          f"→ 최종 사용가능 {safe_free:.0f}h  (필요 {estimated_hours_needed}h)")
     print(f"   [validator] 30% 스케줄 안전 버퍼 계산 완료 → "
           f"{'PASS' if passed else 'HOLD'}")
 
@@ -150,6 +224,10 @@ def validate_schedule(estimated_hours_needed: int, ctx: dict) -> dict:
         "passed": passed,
         "free_hours": free_hours,
         "safe_free_hours": safe_free,
+        "safe_free_before_academic": safe_before_academic,
         "buffer_hours": buffer,
         "needed_hours": estimated_hours_needed,
+        "calendar_busy_hours": calendar_busy,
+        "timetable_busy_hours": timetable_busy,
+        "academic_pressure": acad,
     }

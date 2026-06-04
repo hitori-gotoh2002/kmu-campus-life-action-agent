@@ -7,12 +7,18 @@ load_dotenv()
 os.environ["DEMO_MODE"] = "false"
 
 import streamlit as st
-from modules import store, classifier
+from modules import store, classifier, timetable
 
 store.load_keys_into_env()
 st.set_page_config(page_title="설정", page_icon="⚙️", layout="centered")
 st.title("⚙️ 설정")
 st.caption("API 키와 추천 수신 방식을 여기서 설정합니다. (로컬에만 저장 · 노션에는 캘린더/포트폴리오만)")
+
+
+def editor_rows(value) -> list[dict]:
+    if hasattr(value, "to_dict"):
+        return value.to_dict("records")
+    return list(value or [])
 
 # ── API 키 ─────────────────────────────────────────────────────
 st.subheader("🔑 API 키")
@@ -39,6 +45,61 @@ with st.form("keys"):
                 store.set_setting(k, v.strip())
         store.load_keys_into_env()
         st.success("저장 완료! 이제 추천/졸업 기능을 사용할 수 있습니다.")
+
+st.divider()
+
+# ── 시간표 PDF ────────────────────────────────────────────────
+st.subheader("🗓️ 수업 시간표")
+st.caption("노션 캘린더에는 회의·모임·회식 같은 실제 일정만 두고, 수업 시간표는 여기서 PDF로 업로드해 추천 로직에 반영합니다.")
+
+saved_tt = timetable.load()
+rows = saved_tt.get("rows", [])
+if rows:
+    st.caption(f"저장된 시간표: {len(rows)}개 수업 · 주간 {timetable.busy_hours(rows):g}시간"
+               + (f" · {saved_tt.get('updated_at', '')}" if saved_tt.get("updated_at") else ""))
+else:
+    st.caption("저장된 시간표가 없습니다. 시간표 PDF를 올리면 일정 검증에 반영됩니다.")
+
+up = st.file_uploader("시간표 PDF", type="pdf")
+if up and st.button("📄 시간표 분석", use_container_width=True):
+    with st.spinner("시간표 PDF 분석 중…"):
+        try:
+            parsed = timetable.extract(up.read())
+            st.session_state.timetable_draft = parsed
+            if parsed.get("rows"):
+                st.success(f"{len(parsed['rows'])}개 수업을 추출했습니다. 아래 표를 확인하고 저장하세요.")
+            else:
+                st.warning("시간표를 자동 추출하지 못했습니다. 표에 직접 입력해 저장할 수 있습니다.")
+        except Exception as e:
+            st.error(f"시간표 분석 실패: {e}")
+
+draft = st.session_state.get("timetable_draft") or saved_tt
+draft_rows = draft.get("rows", [])
+editor_seed = draft_rows or [{"name": "", "day": "월", "start": 9.0, "end": 10.5, "place": ""}]
+edited_rows = st.data_editor(
+    editor_seed,
+    num_rows="dynamic",
+    use_container_width=True,
+    column_config={
+        "name": st.column_config.TextColumn("과목/일정명"),
+        "day": st.column_config.SelectboxColumn("요일", options=timetable.DAYS),
+        "start": st.column_config.NumberColumn("시작", step=0.5, format="%.2f"),
+        "end": st.column_config.NumberColumn("종료", step=0.5, format="%.2f"),
+        "place": st.column_config.TextColumn("장소"),
+    },
+    key="timetable_editor",
+)
+c = st.columns(2)
+if c[0].button("💾 시간표 저장", use_container_width=True):
+    clean_rows = timetable.normalize_rows(editor_rows(edited_rows))
+    data = {"updated_at": draft.get("updated_at"), "method": draft.get("method", "manual"), "rows": clean_rows}
+    timetable.save(data)
+    st.session_state.timetable_draft = data
+    st.success(f"시간표 저장 완료: {len(clean_rows)}개 수업 · 주간 {timetable.busy_hours(clean_rows):g}시간")
+if c[1].button("🗑️ 시간표 삭제", use_container_width=True):
+    timetable.clear()
+    st.session_state.timetable_draft = {"rows": []}
+    st.success("저장된 시간표를 삭제했습니다.")
 
 st.divider()
 

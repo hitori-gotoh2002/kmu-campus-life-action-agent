@@ -13,6 +13,8 @@ import os
 import textwrap
 import time
 
+from modules import calendar_summary
+
 
 def _is_demo() -> bool:
     return os.getenv("DEMO_MODE", "true").lower() == "true"
@@ -152,14 +154,35 @@ def execute_actions(candidate: dict) -> None:
         print("   [info] 추천 상세(근거·체크리스트·초안)는 웹/백엔드에서 열람\n")
         return
 
-    # 노션에는 캘린더(준비 일정)만 기록. 추천 상세는 로컬 백엔드(store)에 보관.
-    _create_notion_schedule_block(n.title, a.estimated_hours_needed)
-    print("   [executor] 노션 캘린더에 '준비' 일정 등록 완료 (추천 상세는 웹에서 확인)")
+    details = calendar_summary.build_event_details(candidate)
+    _create_notion_schedule_block(n.title, a.estimated_hours_needed, details)
+    print("   [executor] 노션 캘린더에 일정 + 요약 설명 등록 완료")
 
 
-def _create_notion_schedule_block(title: str, hours: int) -> None:
+def _ensure_detail_properties(notion, database_id: str) -> set[str]:
+    """캘린더 카드에서 바로 볼 수 있는 설명용 속성을 보강한다. 실패해도 본문 블록은 계속 쓴다."""
+    optional = {
+        "설명": {"rich_text": {}},
+        "원문": {"url": {}},
+        "적합도": {"number": {}},
+        "도메인": {"rich_text": {}},
+    }
+    try:
+        db = notion.databases.retrieve(database_id=database_id)
+        existing = set((db.get("properties") or {}).keys())
+        missing = {k: v for k, v in optional.items() if k not in existing}
+        if missing:
+            notion.databases.update(database_id=database_id, properties=missing)
+            existing.update(missing.keys())
+        return existing
+    except Exception as e:
+        print(f"   [notion-schedule] 설명 속성 확인 생략({e})")
+        return set()
+
+
+def _create_notion_schedule_block(title: str, hours: int, details: dict | None = None) -> None:
     """승인된 활동을 Notion 일정 DB(validator가 읽는 그 DB)에 추가.
-    캘린더 뷰 표시를 위해 '날짜'(다음 토요일 10시~) 도 함께 기록."""
+    캘린더 뷰 표시를 위해 '날짜'(다음 토요일 10시~)와 설명 본문도 함께 기록."""
     import datetime as dt
     from notion_client import Client
     notion = Client(auth=os.getenv("NOTION_API_KEY"))
@@ -173,18 +196,33 @@ def _create_notion_schedule_block(title: str, hours: int) -> None:
     start_iso = f"{sat.isoformat()}T{start_h:02d}:00:00+09:00"
     end_iso = f"{sat.isoformat()}T{end_h:02d}:00:00+09:00"
 
+    details = details or {}
+    available_props = _ensure_detail_properties(notion, schedule_db)
+    properties = {
+        "일정명": {"title": [{"text": {"content": f"{title} 준비"}}]},
+        "요일": {"select": {"name": "토"}},
+        "시작": {"number": start_h},
+        "종료": {"number": end_h},
+        "날짜": {"date": {"start": start_iso, "end": end_iso}},
+        "유형": {"select": {"name": "활동"}},
+    }
+    if "설명" in available_props and details.get("short_description"):
+        properties["설명"] = {"rich_text": [{"text": {"content": details["short_description"][:1900]}}]}
+    if "원문" in available_props and details.get("url"):
+        properties["원문"] = {"url": details["url"]}
+    if "적합도" in available_props and details.get("score"):
+        properties["적합도"] = {"number": details["score"]}
+    if "도메인" in available_props and details.get("domain"):
+        properties["도메인"] = {"rich_text": [{"text": {"content": details["domain"][:1900]}}]}
+
+    children = calendar_summary.to_notion_children(details) if details else []
+
     notion.pages.create(
         parent={"database_id": schedule_db},
-        properties={
-            "일정명": {"title": [{"text": {"content": f"{title} 준비"}}]},
-            "요일": {"select": {"name": "토"}},
-            "시작": {"number": start_h},
-            "종료": {"number": end_h},
-            "날짜": {"date": {"start": start_iso, "end": end_iso}},
-            "유형": {"select": {"name": "활동"}},
-        },
+        properties=properties,
+        children=children,
     )
-    print(f"   [notion-schedule] '{title} 준비' 일정 블록 등록 완료 (캘린더 {sat} 반영)")
+    print(f"   [notion-schedule] '{title} 준비' 일정 블록+설명 등록 완료 (캘린더 {sat} 반영)")
 
 
 # (칸반 관련 코드 제거 — 새 구조에서 추천 상세는 웹/백엔드 보관, 노션엔 캘린더만)

@@ -16,14 +16,14 @@ store.load_keys_into_env()   # 웹에서 저장한 API 키 적용
 st.set_page_config(page_title="KMU 캠퍼스 라이프 에이전트", page_icon="🎓", layout="centered")
 
 st.title("🎓 KMU 캠퍼스 라이프 에이전트")
-st.caption("포트폴리오·시간표·성적을 한데 모아 — 커리어 추천 + 졸업까지 도와줍니다.")
+st.caption("포트폴리오·웹 시간표·성적·노션 실제 일정을 한데 모아 — 커리어 추천 + 졸업까지 도와줍니다.")
 
 st.divider()
 c = st.columns(2)
 with c[0]:
     st.subheader("📋 커리어 추천")
     st.write("학사·공모전·대외활동 공지를 분야별로 분석해, 내 강점·일정에 맞는 활동을 추천하고 "
-             "노션 캘린더·칸반에 등록합니다.")
+             "노션 캘린더에 등록합니다.")
     st.page_link("pages/1_추천_리뷰.py", label="추천 리뷰 열기 →")
 with c[1]:
     st.subheader("🎓 졸업 진단")
@@ -47,4 +47,4 @@ except Exception as e:
     st.caption(f"프로필 로드 보류: {e}")
 
 st.divider()
-st.caption("데이터: 노션(프로필·이력·설정·캘린더·졸업요건) · OpenAI · 텔레그램")
+st.caption("데이터: 노션(실제 일정·포트폴리오) · 로컬 백엔드(시간표·이력·설정) · OpenAI · 텔레그램")

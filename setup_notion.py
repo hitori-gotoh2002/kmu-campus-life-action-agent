@@ -63,7 +63,9 @@ def main():
             "일정명": {"title": {}}, "요일": sel(list("월화수목금토일")),
             "시작": {"number": {}}, "종료": {"number": {}}, "날짜": {"date": {}},
             "교수": {"rich_text": {}}, "장소": {"rich_text": {}},
-            "유형": sel(["수업", "학회", "스터디", "회의", "개인", "활동"]),
+            "설명": {"rich_text": {}}, "원문": {"url": {}},
+            "적합도": {"number": {}}, "도메인": {"rich_text": {}},
+            "유형": sel(["회의", "모임", "회식", "개인", "활동", "기타"]),
         },
     )
     cid = cal["id"].replace("-", "")
@@ -72,7 +74,8 @@ def main():
     time.sleep(0.3)
 
     print("\n끝! 다음 단계:")
-    print("  · 노션에 '캘린더' DB를 열어 본인 시간표를 입력하고 캘린더 뷰를 추가")
+    print("  · 노션 '캘린더' DB에는 회의/모임/회식 같은 실제 일정만 입력하고 캘린더 뷰를 추가")
+    print("  · 수업 시간표는 웹 ⚙️설정에서 PDF로 업로드")
     print("  · 노션 포트폴리오 페이지를 만들고 통합 연결 → 그 ID를 웹 ⚙️설정 또는 .env(NOTION_PORTFOLIO_PAGE_ID)")
     print("  · 웹 실행: streamlit run app.py → ⚙️설정에서 OpenAI/Notion/Telegram 키 입력")
 

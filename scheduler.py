@@ -16,6 +16,7 @@ os.environ["DELIVERY_MODE"] = "digest"   # 스케줄러는 항상 digest 모드
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from modules import telegram_callbacks
 from main import digest_run
 
 HOUR = int(os.getenv("DIGEST_HOUR", "8"))
@@ -30,12 +31,22 @@ def job():
         print(f"[scheduler] digest 실패: {e}")
 
 
+def callback_job():
+    try:
+        result = telegram_callbacks.poll_once(timeout=0)
+        if result.get("handled"):
+            print(f"[scheduler] 텔레그램 승인 처리 {result['handled']}건")
+    except Exception as e:
+        print(f"[scheduler] 텔레그램 콜백 처리 실패: {e}")
+
+
 if __name__ == "__main__":
     if os.getenv("RUN_NOW", "false").lower() == "true":
         job()
 
     sched = BlockingScheduler(timezone="Asia/Seoul")
     sched.add_job(job, "cron", hour=HOUR, minute=MINUTE)
+    sched.add_job(callback_job, "interval", seconds=20)
     print(f"[scheduler] 매일 {HOUR:02d}:{MINUTE:02d} (KST) 분야별 추천서 발송 대기. Ctrl+C 종료.")
     try:
         sched.start()

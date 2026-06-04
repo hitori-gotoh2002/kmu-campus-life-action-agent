@@ -9,25 +9,37 @@ import json
 import os
 import sqlite3
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 _DB_PATH = Path(__file__).parent.parent / "data" / "agent.db"
 
 
+@contextmanager
 def _conn():
     _DB_PATH.parent.mkdir(exist_ok=True)
     c = sqlite3.connect(_DB_PATH)
-    c.executescript("""
-        CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
-        CREATE TABLE IF NOT EXISTS profile(key TEXT PRIMARY KEY, value TEXT);
-        CREATE TABLE IF NOT EXISTS preferences(category TEXT PRIMARY KEY, cycle TEXT, channel TEXT);
-        CREATE TABLE IF NOT EXISTS kv(key TEXT PRIMARY KEY, value TEXT);
-        CREATE TABLE IF NOT EXISTS recommendations(
-            url TEXT PRIMARY KEY, title TEXT, category TEXT, source TEXT,
-            score REAL, hours REAL, deadline TEXT, reason TEXT, domain TEXT,
-            status TEXT, created_at REAL);
-    """)
-    return c
+    try:
+        c.executescript("""
+            CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
+            CREATE TABLE IF NOT EXISTS profile(key TEXT PRIMARY KEY, value TEXT);
+            CREATE TABLE IF NOT EXISTS preferences(category TEXT PRIMARY KEY, cycle TEXT, channel TEXT);
+            CREATE TABLE IF NOT EXISTS kv(key TEXT PRIMARY KEY, value TEXT);
+            CREATE TABLE IF NOT EXISTS recommendations(
+                url TEXT PRIMARY KEY, title TEXT, category TEXT, source TEXT,
+                score REAL, hours REAL, deadline TEXT, reason TEXT, domain TEXT,
+                status TEXT, created_at REAL);
+        """)
+        cols = {row[1] for row in c.execute("PRAGMA table_info(recommendations)")}
+        if "body" not in cols:
+            c.execute("ALTER TABLE recommendations ADD COLUMN body TEXT")
+        yield c
+        c.commit()
+    except Exception:
+        c.rollback()
+        raise
+    finally:
+        c.close()
 
 
 # ── settings (API 키, 자동수신 플래그 등) ──────────────────────────
@@ -89,17 +101,19 @@ def add_rec(rec: dict):
             {**{k: rec.get(k) for k in
                 ("url", "title", "category", "source", "score", "hours", "deadline", "reason", "domain", "status")},
              "created_at": time.time()})
+        if rec.get("body"):
+            c.execute("UPDATE recommendations SET body=? WHERE url=?", (rec.get("body"), rec.get("url")))
 
 
 def list_recs(status: str | None = None) -> list:
-    q = "SELECT url,title,category,source,score,hours,deadline,reason,domain,status FROM recommendations"
+    q = "SELECT url,title,category,source,score,hours,deadline,reason,domain,status,body,created_at FROM recommendations"
     args = ()
     if status:
         q += " WHERE status=?"
         args = (status,)
     q += " ORDER BY score DESC"
     with _conn() as c:
-        cols = ["url", "title", "category", "source", "score", "hours", "deadline", "reason", "domain", "status"]
+        cols = ["url", "title", "category", "source", "score", "hours", "deadline", "reason", "domain", "status", "body", "created_at"]
         return [dict(zip(cols, row)) for row in c.execute(q, args)]
 
 
