@@ -123,11 +123,11 @@ def _keyword_points(content: str, *, category: str, deadline: str,
 
     seen, uniq = set(), []
     for p in points:
-        p = _clip(p, 120)
+        p = _clip(p, 140)
         if p and p not in seen:
             seen.add(p)
             uniq.append(p)
-    return uniq[:6] or [f"'{title}' 공고 — 원문에서 모집 대상·일정·혜택을 확인하세요."]
+    return uniq[:8] or [f"'{title}' 공고 — 원문에서 모집 대상·일정·혜택을 확인하세요."]
 
 
 def build_event_details(candidate: dict) -> dict:
