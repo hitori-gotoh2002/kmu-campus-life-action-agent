@@ -183,6 +183,22 @@ def content_summary_points(row: dict) -> list[str]:
     return calendar_summary.build_event_details(candidate_from_row(row))["summary_points"]
 
 
+def render_summary(points: list[str]) -> None:
+    """'항목: 내용' 줄이 2개 이상이면 정보표로, 아니면 글머리표로 렌더한다."""
+    rows = [calendar_summary.split_kv(p) for p in points]
+    keyed = [r for r in rows if r[0]]
+    if len(keyed) >= 2:
+        md = "| 항목 | 내용 |\n|:--|:--|\n"
+        for k, v in rows:
+            k = (k or "—").replace("|", "\\|")
+            v = (v or "").replace("|", "\\|")
+            md += f"| **{k}** | {v} |\n"
+        st.markdown(md)
+    else:
+        for k, v in rows:
+            st.markdown(f"- **{k}**: {v}" if k else f"- {v}")
+
+
 def next_steps(row: dict, warning: str) -> list[str]:
     cat = row["category"]
     deadline = row.get("deadline") or ""
@@ -263,8 +279,7 @@ def render_recommendation_card(row: dict, index: int) -> None:
             st.warning(warning)
 
         st.markdown("**내용 요약**")
-        for point in content_summary_points(row):
-            st.markdown(f"- {point}")
+        render_summary(content_summary_points(row))
 
         if reason:
             st.markdown("**왜 추천됐나요**")

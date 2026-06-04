@@ -123,11 +123,11 @@ def _keyword_points(content: str, *, category: str, deadline: str,
 
     seen, uniq = set(), []
     for p in points:
-        p = _clip(p, 140)
+        p = _clip(p, 200)
         if p and p not in seen:
             seen.add(p)
             uniq.append(p)
-    return uniq[:8] or [f"'{title}' 공고 — 원문에서 모집 대상·일정·혜택을 확인하세요."]
+    return uniq[:12] or [f"'{title}' 공고 — 원문에서 모집 대상·일정·혜택을 확인하세요."]
 
 
 def build_event_details(candidate: dict) -> dict:
@@ -220,15 +220,52 @@ def _bullet(content: str) -> dict:
     }
 
 
+def split_kv(point: str) -> tuple[str, str]:
+    """'항목: 내용' 한 줄을 (항목, 내용)으로 분리. 콜론이 없으면 항목은 빈 문자열."""
+    s = str(point or "").strip()
+    if ":" in s:
+        k, v = s.split(":", 1)
+        return k.strip(), v.strip()
+    return "", s
+
+
+def _table_cell(text: str) -> list[dict]:
+    return [{"type": "text", "text": {"content": _clip(text or "", 1900)}}]
+
+
+def _summary_table(points: list[str]) -> dict:
+    """키워드 요약을 노션 표(항목 | 내용) 블록으로 만든다."""
+    rows = [{
+        "object": "block", "type": "table_row",
+        "table_row": {"cells": [_table_cell("항목"), _table_cell("내용")]},
+    }]
+    for p in points:
+        k, v = split_kv(p)
+        rows.append({
+            "object": "block", "type": "table_row",
+            "table_row": {"cells": [_table_cell(k or "내용"), _table_cell(v)]},
+        })
+    return {
+        "object": "block", "type": "table",
+        "table": {"table_width": 2, "has_column_header": True,
+                  "has_row_header": False, "children": rows},
+    }
+
+
 def to_notion_children(details: dict) -> list[dict]:
     """Notion pages.create(children=...)에 넣을 블록 목록을 만든다."""
     blocks: list[dict] = []
 
-    # 1) 내용 요약 — 활동이 무엇인지 키워드 중심 글머리표(추천 이유와 분리)
+    # 1) 내용 요약 — 활동이 무엇인지(추천 이유와 분리).
+    #    '항목: 내용' 줄이 2개 이상이면 정보표로, 아니면 글머리표로 보여준다.
     blocks.append(_heading("📝 내용 요약"))
     pts = details.get("summary_points") or _split_lines(details.get("summary", "")) \
         or ["원문에서 모집 대상·일정·혜택을 확인하세요."]
-    blocks.extend(_bullet(p) for p in pts)
+    keyed = [p for p in pts if split_kv(p)[0]]
+    if len(keyed) >= 2:
+        blocks.append(_summary_table(pts))
+    else:
+        blocks.extend(_bullet(p) for p in pts)
 
     # 2) 핵심 정보 — 마감/예상시간/적합도/도메인/출처를 글머리표로
     if details.get("meta"):
