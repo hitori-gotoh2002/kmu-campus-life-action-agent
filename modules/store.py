@@ -95,14 +95,23 @@ def rec_exists(url: str) -> bool:
 def add_rec(rec: dict):
     with _conn() as c:
         c.execute("""INSERT INTO recommendations
-            (url,title,category,source,score,hours,deadline,reason,domain,status,created_at)
-            VALUES(:url,:title,:category,:source,:score,:hours,:deadline,:reason,:domain,:status,:created_at)
-            ON CONFLICT(url) DO UPDATE SET status=excluded.status, score=excluded.score""",
+            (url,title,category,source,score,hours,deadline,reason,domain,status,body,created_at)
+            VALUES(:url,:title,:category,:source,:score,:hours,:deadline,:reason,:domain,:status,:body,:created_at)
+            ON CONFLICT(url) DO UPDATE SET
+                title=excluded.title,
+                category=excluded.category,
+                source=excluded.source,
+                score=excluded.score,
+                hours=excluded.hours,
+                deadline=excluded.deadline,
+                reason=excluded.reason,
+                domain=excluded.domain,
+                status=excluded.status,
+                body=excluded.body,
+                created_at=excluded.created_at""",
             {**{k: rec.get(k) for k in
-                ("url", "title", "category", "source", "score", "hours", "deadline", "reason", "domain", "status")},
+                ("url", "title", "category", "source", "score", "hours", "deadline", "reason", "domain", "status", "body")},
              "created_at": time.time()})
-        if rec.get("body"):
-            c.execute("UPDATE recommendations SET body=? WHERE url=?", (rec.get("body"), rec.get("url")))
 
 
 def list_recs(status: str | None = None) -> list:
@@ -120,6 +129,18 @@ def list_recs(status: str | None = None) -> list:
 def set_rec_status(url: str, status: str):
     with _conn() as c:
         c.execute("UPDATE recommendations SET status=? WHERE url=?", (status, url))
+
+
+def get_rec_status(url: str) -> str | None:
+    with _conn() as c:
+        r = c.execute("SELECT status FROM recommendations WHERE url=?", (url,)).fetchone()
+    return r[0] if r else None
+
+
+def set_status_where(from_status: str, to_status: str) -> int:
+    with _conn() as c:
+        cur = c.execute("UPDATE recommendations SET status=? WHERE status=?", (to_status, from_status))
+        return cur.rowcount
 
 
 # ── preferences (분야별 수신 설정) ────────────────────────────────

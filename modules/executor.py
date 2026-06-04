@@ -25,6 +25,11 @@ def _build_report(candidate: dict) -> str:
     a = candidate["analysis"]
     v = candidate["validation"]
     draft_link = candidate.get("draft_link", "(초안 링크)")
+    schedule_line = (
+        f"사용가능 {v['safe_free_hours']:.0f}h ≥ 필요 {v['needed_hours']}h  ✅"
+        if v.get("passed")
+        else f"⚠시험기간 주의: 사용가능 {v['safe_free_hours']:.0f}h < 필요 {v['needed_hours']}h"
+    )
     return textwrap.dedent(f"""
     📊 추천 활동 리포트
     ─────────────────────────
@@ -32,7 +37,7 @@ def _build_report(candidate: dict) -> str:
     도메인 : {a.domain}
     적합도 : {a.suitability_score}/100
     소요시간: {a.estimated_hours_needed}시간 (역량 가중치 반영)
-    일정   : 사용가능 {v['safe_free_hours']:.0f}h ≥ 필요 {v['needed_hours']}h  ✅
+    일정   : {schedule_line}
     근거   : {a.matching_reason}
     초안   : {draft_link}
     ─────────────────────────
@@ -155,7 +160,7 @@ def execute_actions(candidate: dict) -> None:
         return
 
     details = calendar_summary.build_event_details(candidate)
-    _create_notion_schedule_block(n.title, a.estimated_hours_needed, details)
+    _create_notion_schedule_block(n, a.estimated_hours_needed, details)
     print("   [executor] 노션 캘린더에 일정 + 요약 설명 등록 완료")
 
 
@@ -180,27 +185,92 @@ def _ensure_detail_properties(notion, database_id: str) -> set[str]:
         return set()
 
 
-def _create_notion_schedule_block(title: str, hours: int, details: dict | None = None) -> None:
-    """승인된 활동을 Notion 일정 DB(validator가 읽는 그 DB)에 추가.
-    캘린더 뷰 표시를 위해 '날짜'(다음 토요일 10시~)와 설명 본문도 함께 기록."""
+_WD = ["월", "화", "수", "목", "금", "토", "일"]
+
+
+def _calendar_occupied(notion, db_id: str) -> dict:
+    """캘린더의 기존 일정 점유 시간 {날짜: [(시작h,종료h)]}. 슬롯 충돌 방지용."""
     import datetime as dt
+    occ: dict[str, list] = {}
+    try:
+        cursor = None
+        while True:
+            kw = {"database_id": db_id, "page_size": 100}
+            if cursor:
+                kw["start_cursor"] = cursor
+            r = notion.databases.query(**kw)
+            for p in r["results"]:
+                d = p["properties"].get("날짜", {}).get("date")
+                if not d or not d.get("start") or "T" not in d["start"]:
+                    continue
+                try:
+                    sdt = dt.datetime.fromisoformat(d["start"].replace("Z", "+00:00")).replace(tzinfo=None)
+                    e = d.get("end") or d["start"]
+                    edt = dt.datetime.fromisoformat(e.replace("Z", "+00:00")).replace(tzinfo=None)
+                except ValueError:
+                    continue
+                occ.setdefault(sdt.date().isoformat(), []).append(
+                    (sdt.hour + sdt.minute / 60, edt.hour + edt.minute / 60))
+            if r.get("has_more"):
+                cursor = r["next_cursor"]
+            else:
+                break
+    except Exception as e:
+        print(f"   [notion-schedule] 기존 일정 조회 생략({e})")
+    return occ
+
+
+def _find_slot(notice, hours: int, notion, db_id: str):
+    """마감일 기준 날짜 + 시간표/기존일정과 안 겹치는 빈 슬롯을 찾아 (날짜, 시작h, 종료h) 반환."""
+    import datetime as dt
+    from modules import deadline as dlmod, timetable
+    today = dt.date.today()
+    dl = dlmod.deadline_date(notice)
+    if dl and dl > today:
+        target = dl - dt.timedelta(days=2)
+        if target <= today:
+            target = today + dt.timedelta(days=1)
+    else:
+        target = today + dt.timedelta(days=2)
+    block = 2 if (hours or 0) <= 25 else 3
+
+    tt_rows = timetable.load().get("rows", [])
+    occ = _calendar_occupied(notion, db_id)
+
+    def overlaps(s, e, busy):
+        return any(s < be and bs < e for bs, be in busy)
+
+    for off in range(0, 21):
+        day = target + dt.timedelta(days=off)
+        wd = _WD[day.weekday()]
+        busy = [(float(r.get("start", 0)), float(r.get("end", 0)))
+                for r in tt_rows if r.get("day") == wd]
+        busy += occ.get(day.isoformat(), [])
+        for start in (19, 18, 20, 21, 14, 16, 13, 15, 10):
+            if start + block <= 23 and not overlaps(start, start + block, busy):
+                return day, start, start + block
+    return target, 19, 19 + block
+
+
+def _create_notion_schedule_block(notice, hours: int, details: dict | None = None) -> None:
+    """승인된 활동을 Notion 캘린더에 추가.
+    마감일 기준 + 빈 슬롯 탐색으로 날짜·시간을 분산 배치(한 날짜에 몰리지 않게)."""
     from notion_client import Client
     notion = Client(auth=os.getenv("NOTION_API_KEY"))
     # '내 캘린더'로 통일(가용시간 계산이 승인 활동도 반영). 없으면 옛 일정 DB.
     schedule_db = os.getenv("NOTION_CALENDAR_DB_ID") or os.getenv("NOTION_SCHEDULE_DB_ID")
 
-    start_h, end_h = 10, 10 + min(hours, 4)
-    today = dt.date.today()
-    days_ahead = (5 - today.weekday()) % 7 or 7   # 다음 토요일(월=0…토=5)
-    sat = today + dt.timedelta(days=days_ahead)
-    start_iso = f"{sat.isoformat()}T{start_h:02d}:00:00+09:00"
-    end_iso = f"{sat.isoformat()}T{end_h:02d}:00:00+09:00"
+    title = getattr(notice, "title", "활동")
+    day, start_h, end_h = _find_slot(notice, hours, notion, schedule_db)
+    start_iso = f"{day.isoformat()}T{start_h:02d}:00:00+09:00"
+    end_iso = f"{day.isoformat()}T{end_h:02d}:00:00+09:00"
+    print(f"   [notion-schedule] 배치: {day}({_WD[day.weekday()]}) {start_h}~{end_h}시")
 
     details = details or {}
     available_props = _ensure_detail_properties(notion, schedule_db)
     properties = {
         "일정명": {"title": [{"text": {"content": f"{title} 준비"}}]},
-        "요일": {"select": {"name": "토"}},
+        "요일": {"select": {"name": _WD[day.weekday()]}},
         "시작": {"number": start_h},
         "종료": {"number": end_h},
         "날짜": {"date": {"start": start_iso, "end": end_iso}},

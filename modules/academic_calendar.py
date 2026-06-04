@@ -127,6 +127,26 @@ def fetch_events(year: int | None = None, force: bool = False) -> list[dict]:
     return events
 
 
+def upcoming_events(days: int = 7, today: dt.date | None = None, force: bool = False) -> list[dict]:
+    """오늘부터 days일 안에 시작되거나 진행 중인 학사일정을 반환."""
+    today = today or _today()
+    horizon = today + dt.timedelta(days=days)
+    events = fetch_events(today.year, force=force)
+
+    upcoming: list[dict] = []
+    for event in events:
+        try:
+            start = dt.date.fromisoformat(event["start"])
+            end = dt.date.fromisoformat(event["end"])
+        except (KeyError, ValueError):
+            continue
+        if start <= horizon and end >= today:
+            upcoming.append(event)
+
+    upcoming.sort(key=lambda e: (e.get("start", ""), e.get("end", ""), e.get("title", "")))
+    return upcoming
+
+
 def _overlaps(a_start: dt.date, a_end: dt.date, b_start: dt.date, b_end: dt.date) -> bool:
     return a_start <= b_end and b_start <= a_end
 

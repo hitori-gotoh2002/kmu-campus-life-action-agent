@@ -7,18 +7,19 @@
                      제목/본문/첨부만 추출한 뒤 파기 (잔여 파일 오염 방지)
 
 실연 대상 (AI빅데이터융합경영학과 기준):
-  - 국민대 학사공지(본부)       : div.board_list > li (분류/제목/날짜 + view.do)
-  - 국민대 경영대학 공지         : div.list-tbody > li.subject > a (제목 + 상세번호)
-  * 두 사이트 모두 서버 렌더링이라 requests + BeautifulSoup 로 수집 가능.
-  * 링커리어/인스타그램은 JS-SPA/로그인벽이라 별도 처리 필요 (README 참고).
+  - 국민대 학사공지(본부) / 국민대 전체 장학공지 / 경영대학 공지 / 경영대학 장학공지 / SW 취업공지
+  - 링커리어 공모전·대외활동·채용/인턴·교육/자격증
+  * 국민대 공지 사이트는 서버 렌더링이라 requests + BeautifulSoup 로 수집 가능.
+  * 링커리어는 JS-SPA라 HTML 대신 GraphQL API를 사용한다.
 """
 from __future__ import annotations
 
 import os
 import random
+import re
 import time
 from dataclasses import dataclass
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -32,8 +33,27 @@ BROWSER_HEADERS = {
     "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
 }
 
+# AI빅데이터융합경영학과 시연용 초점 키워드.
+# 소스 자체는 매일 새로 긁되, 추천 후보는 데이터/AI/경영/기획 축으로 좁혀 과도한 노이즈를 막는다.
+AI_BIGDATA_FOCUS_KEYWORDS = (
+    "AI", "인공지능", "빅데이터", "데이터", "데이터분석", "분석", "애널리틱스",
+    "머신러닝", "딥러닝", "LLM", "생성형", "Python", "파이썬", "SQL", "통계",
+    "디지털", "DX", "IT", "SW", "소프트웨어", "개발", "해커톤",
+    "서비스", "기획", "마케팅", "경영", "비즈니스", "금융", "핀테크",
+    "공공데이터", "창업", "프로덕트", "PM", "UX",
+)
+CAREER_FOCUS_KEYWORDS = AI_BIGDATA_FOCUS_KEYWORDS + (
+    "인턴", "현장실습", "직무체험", "신입", "career", "recruit",
+    "데이터사이언티스트", "데이터 사이언티스트", "데이터 엔지니어",
+)
+CERT_FOCUS_KEYWORDS = AI_BIGDATA_FOCUS_KEYWORDS + (
+    "자격증", "자격", "SQLD", "ADsP", "ADP", "DAsP", "빅데이터분석기사",
+    "정보처리기사", "컴퓨터활용능력", "컴활", "부트캠프", "아카데미",
+    "강의", "특강", "과정",
+)
+
 # ---------------------------------------------------------------------------
-# 실제 수집 대상 (확장 가능: name/url/base/parser 만 추가하면 됨)
+# 실제 수집 대상 (확장 가능: name/url/base/parser/kind 만 추가하면 됨)
 # ---------------------------------------------------------------------------
 TARGET_SOURCES = [
     {
@@ -48,10 +68,58 @@ TARGET_SOURCES = [
         "base": "https://biz.kookmin.ac.kr/community/notice/",
         "parser": "kmu_biz",
     },
-    # 링커리어: Next.js SPA 라 HTML 파싱 불가 → 공식 GraphQL API 직접 호출.
-    # activityTypeID  1=대외활동, 3=공모전 / status:OPEN = 모집중
-    {"name": "링커리어 공모전", "kind": "graphql", "activity_type_id": 3},
-    {"name": "링커리어 대외활동", "kind": "graphql", "activity_type_id": 1},
+    {
+        "name": "국민대 전체 장학공지",
+        "url": "https://www.kookmin.ac.kr/user/kmuNews/notice/7/index.do",
+        "base": "https://www.kookmin.ac.kr",
+        "parser": "kmu_main",
+        "category_hint": "장학금",
+    },
+    {
+        "name": "국민대 경영대학 장학공지",
+        "url": "https://biz.kookmin.ac.kr/community/kookmin/scholarship/",
+        "base": "https://biz.kookmin.ac.kr/community/kookmin/scholarship/",
+        "parser": "kmu_biz",
+        "category_hint": "장학금",
+    },
+    {
+        "name": "국민대 SW 취업공지",
+        "url": "https://cs.kookmin.ac.kr/news/jobs/",
+        "base": "https://cs.kookmin.ac.kr/news/jobs/",
+        "parser": "kmu_biz",
+        "category_hint": "채용·인턴",
+        "include_keywords": CAREER_FOCUS_KEYWORDS,
+    },
+    # 링커리어: Next.js SPA 라 HTML 파싱 불가 → GraphQL API 직접 호출.
+    # activityTypeID 1=대외활동, 3=공모전, 5=채용, 6=교육 / status:OPEN = 모집중
+    {
+        "name": "링커리어 공모전",
+        "kind": "graphql",
+        "activity_type_id": 3,
+        "category_hint": "공모전·대회",
+        "include_keywords": AI_BIGDATA_FOCUS_KEYWORDS,
+    },
+    {
+        "name": "링커리어 대외활동",
+        "kind": "graphql",
+        "activity_type_id": 1,
+        "category_hint": "대외활동·서포터즈",
+        "include_keywords": AI_BIGDATA_FOCUS_KEYWORDS + ("서포터즈", "기자단", "멘토", "앰배서더"),
+    },
+    {
+        "name": "링커리어 채용·인턴",
+        "kind": "graphql",
+        "activity_type_id": 5,
+        "category_hint": "채용·인턴",
+        "include_keywords": CAREER_FOCUS_KEYWORDS,
+    },
+    {
+        "name": "링커리어 교육·자격증",
+        "kind": "graphql",
+        "activity_type_id": 6,
+        "category_hint": "자격증",
+        "include_keywords": CERT_FOCUS_KEYWORDS,
+    },
 ]
 
 # 상세페이지(본문/첨부) 진입 수집 상한 - 요청 과다 방지.
@@ -61,7 +129,7 @@ BODY_MAX_CHARS = 1500  # LLM 비용/노이즈 제어용 본문 길이 상한
 
 # 링커리어 GraphQL
 LINKAREER_GQL = "https://api.linkareer.com/graphql"
-LINKAREER_PAGE_SIZE = int(os.getenv("LINKAREER_PAGE_SIZE", "10"))
+LINKAREER_PAGE_SIZE = int(os.getenv("LINKAREER_PAGE_SIZE", "24"))
 
 
 @dataclass
@@ -136,6 +204,26 @@ def _get(url: str) -> str:
     return resp.text
 
 
+def _keyword_blob(notice: Notice) -> str:
+    """초점 필터에 사용할 텍스트. 출처/카테고리명 때문에 전부 통과되는 일을 막는다."""
+    return f"{notice.title} {notice.body}".casefold()
+
+
+def _apply_focus_filter(source: dict, notices: list[Notice]) -> list[Notice]:
+    """소스별 초점 키워드가 있으면 AI빅데이터융합경영학과 시연에 맞는 후보만 남긴다."""
+    if os.getenv("SOURCE_FOCUS_FILTER", "true").lower() != "true":
+        return notices
+    keywords = source.get("include_keywords")
+    if not keywords:
+        return notices
+
+    folded_keywords = tuple(str(k).casefold() for k in keywords)
+    filtered = [n for n in notices if any(k in _keyword_blob(n) for k in folded_keywords)]
+    skipped = len(notices) - len(filtered)
+    print(f"   [scraper] [{source['name']}] 시연 초점 필터 {len(filtered)}건 통과 / {skipped}건 제외")
+    return filtered
+
+
 # ---------------------------------------------------------------------------
 # 목록 파서 (사이트별)
 # ---------------------------------------------------------------------------
@@ -171,12 +259,14 @@ def _parse_kmu_biz(html: str, base: str) -> list[Notice]:
         title = a.get_text(strip=True)
         if not title:
             continue
+        row = li.find_parent("ul")
+        date_el = row.select_one("li.date") if row else None
         notices.append(Notice(
             title=title,
-            date="",  # 상세페이지에서 보강
+            date=date_el.get_text(strip=True) if date_el else "",
             body="",
             url=urljoin(base, a["href"]),
-            source="국민대 경영대학 공지",
+            source="",
         ))
     return notices
 
@@ -208,8 +298,12 @@ def _fill_detail(notice: Notice, parser: str, base: str) -> None:
     if parser == "kmu_main":
         cont = soup.select_one("div.view_cont")
         scope = soup.select_one("div.board_view") or soup
-    else:  # kmu_biz
-        cont = soup.select_one("div.layout-basic-content")
+    else:  # kmu_biz 계열(경영대/장학/SW 단과대 공지)
+        cont = (
+            soup.select_one("div.layout-basic-content")
+            or soup.select_one("div.board-view")
+            or soup.select_one("div.table-wrap.view-wrap")
+        )
         scope = cont or soup
 
     if cont:
@@ -279,10 +373,10 @@ def _fetch_linkareer(source: dict) -> list[Notice]:
             body=body,
             url=f"https://linkareer.com/activity/{n['id']}",
             attachment_url=None,             # 링커리어 첨부는 포스터 이미지라 평가기준 파싱 대상 아님
-            category=type_name,
+            category=source.get("category_hint") or type_name,
             source=source["name"],
         ))
-    return notices
+    return _apply_focus_filter(source, notices)
 
 
 def _fetch_source(source: dict) -> list[Notice]:
@@ -300,6 +394,11 @@ def _fetch_source(source: dict) -> list[Notice]:
 
     notices = _LIST_PARSERS[parser](list_html, base)
     del list_html
+    for n in notices:
+        n.source = source["name"]
+        if source.get("category_hint"):
+            n.category = source["category_hint"]
+    notices = _apply_focus_filter(source, notices)
     print(f"   [scraper] [{source['name']}] 목록 {len(notices)}건 추출 → "
           f"상위 {min(len(notices), MAX_DETAIL_PER_SOURCE)}건 상세 진입")
 
@@ -309,6 +408,47 @@ def _fetch_source(source: dict) -> list[Notice]:
 
     print(f"   [scraper] [{source['name']}] RAM에서 HTML 즉시 파기 완료")
     return notices[:MAX_DETAIL_PER_SOURCE]
+
+
+def _fetch_academic_calendar_notices() -> list[Notice]:
+    """국민대 공식 학사일정 중 7일 이내 항목을 정보성 공지로 변환."""
+    from modules import academic_calendar
+
+    try:
+        events = academic_calendar.upcoming_events(days=7)
+    except Exception as e:
+        print(f"   [scraper] 국민대 공식 학사일정 수집 실패: {e}")
+        return []
+
+    notices: list[Notice] = []
+    for event in events:
+        start = event.get("start", "")
+        end = event.get("end", "") or start
+        title = event.get("title", "").strip()
+        if not start or not title:
+            continue
+        period = start if start == end else f"{start} ~ {end}"
+        slug = quote(re.sub(r"\s+", "-", title)[:80], safe="")
+        notices.append(Notice(
+            title=title,
+            date=start,
+            body=f"국민대학교 공식 학사일정: {period}. {title}",
+            url=f"{academic_calendar.SCHEDULE_URL}#{start}_{end}_{slug}",
+            attachment_url=None,
+            category="학사일정",
+            source="국민대 공식 학사일정",
+        ))
+
+    print(f"   [scraper] [국민대 공식 학사일정] 7일 이내 {len(notices)}건 수집")
+    return notices
+
+
+def _dedupe_key(notice: Notice) -> tuple[str, str]:
+    """여러 게시판에 미러링되는 장학 공지는 제목 기준으로 한 번만 남긴다."""
+    title = " ".join((notice.title or "").split()).casefold()
+    if (notice.category == "장학금") or ("장학" in (notice.source or "")):
+        return ("scholarship", title)
+    return ("url", notice.url)
 
 
 def collect_notices() -> list[Notice]:
@@ -324,13 +464,26 @@ def collect_notices() -> list[Notice]:
 
     collected: list[Notice] = []
     seen_urls: set[str] = set()
+    seen_keys: set[tuple[str, str]] = set()
     for source in TARGET_SOURCES:
         _polite_delay()
         for n in _fetch_source(source):
             if n.url in seen_urls:
                 continue
+            dedupe_key = _dedupe_key(n)
+            if dedupe_key in seen_keys:
+                print(f"   [scraper] 중복 공지 스킵: {n.title[:60]}")
+                continue
             seen_urls.add(n.url)
+            seen_keys.add(dedupe_key)
             collected.append(n)
+
+    for n in _fetch_academic_calendar_notices():
+        if n.url in seen_urls:
+            continue
+        seen_urls.add(n.url)
+        seen_keys.add(_dedupe_key(n))
+        collected.append(n)
 
     print(f"   [scraper] 총 {len(collected)}건 수집\n")
     return collected

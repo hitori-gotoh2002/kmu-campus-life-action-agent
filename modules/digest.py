@@ -1,11 +1,11 @@
 """modules/digest.py
 Digest 에이전트 — 채널 인식 + 분야별 1순위.
-- 채널=웹      : 추천을 백엔드에 남겨 웹 '추천 리뷰'에서 검토(분야별 1순위, 무시→새로고침→다음순위)
+- 채널=웹      : 추천을 백엔드에 남겨 웹 '내 맞춤 추천함'에서 누적 검토
 - 채널=텔레그램 : 분야별 1순위 추천을 버튼과 함께 발송 → 승인 시 노션 캘린더 등록
   · 장학금/학사일정(정보성): 점수 무관, 있는 만큼 전부
   · 텔레그램 분야인데 추천이 없으면 '추천 없음' 안내 메시지
 승인/거절(버튼) 처리는 비동기 리스너(telegram_callbacks.poll_once, scheduler가 20초마다)가 담당.
-전달 대상 분야는 Preferences 주기(매일/매주)로 결정.
+자동 업데이트/전달 대상 분야는 Preferences 주기(매일/매주)로 결정.
 """
 from __future__ import annotations
 
@@ -90,4 +90,4 @@ def deliver(candidates: list, ctx: dict) -> None:
     if empty:
         _tg(token, "sendMessage", {"chat_id": chat,
             "text": "📭 오늘 " + ", ".join(empty) + " 분야엔 새 추천이 없습니다."})
-    print("   [digest] 발송 완료 — 승인/거절은 리스너(scheduler)가 처리")
+    print("   [digest] 발송 완료 - 승인/거절은 리스너(scheduler)가 처리")

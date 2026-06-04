@@ -23,6 +23,10 @@ _*.py
 data/
 *.db
 
+# ===== 기기별 실행 래퍼 (경로 고정) =====
+run_daily.bat
+run_poll.bat
+
 # ===== 개인 업로드 자료 (성적증명서 등) =====
 uploads/
 *.성적증명서.pdf

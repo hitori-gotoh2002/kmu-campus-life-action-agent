@@ -1,7 +1,7 @@
 """modules/preferences.py
 Preferences — 로컬 백엔드(store) 기반. (노션 아님)
 분야별 수신주기(매일/매주/수동/끄기)를 웹에서 설정 → store 에 저장.
-오늘 자동 전달할 분야를 결정한다.
+오늘 자동 업데이트/전달할 분야를 결정한다.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ def set_preference(category: str, cycle: str, channel: str = "웹") -> None:
 
 
 def due_categories(today: dt.date | None = None) -> set[str]:
-    """오늘 자동 전달 대상 분야."""
+    """오늘 자동 업데이트/전달 대상 분야. 수동/끄기는 자동 실행에서 제외."""
     today = today or dt.date.today()
     wd = WEEKDAYS[today.weekday()]
     weekly_day = os.getenv("DIGEST_WEEKLY_DAY", "월")
@@ -35,3 +35,12 @@ def due_categories(today: dt.date | None = None) -> set[str]:
         elif cyc == "매주" and wd == weekly_day:
             due.add(cat)
     return due
+
+
+def enabled_categories() -> set[str]:
+    """추천 대상 분야. '끄기'는 자동/수동 업데이트와 추천함 표시에서 제외."""
+    return {
+        cat
+        for cat, p in load_preferences().items()
+        if p.get("주기") != "끄기"
+    }

@@ -33,6 +33,12 @@ def is_new(notice) -> bool:
     return not store.rec_exists(notice.url)
 
 
+def status(url: str) -> str | None:
+    if not enabled():
+        return None
+    return store.get_rec_status(url)
+
+
 def record(notice, analysis=None, status="수집됨", category=None) -> None:
     if not enabled():
         return
@@ -97,3 +103,10 @@ def mark(url: str, status: str) -> None:
     if not enabled():
         return
     store.set_rec_status(url, status)
+
+
+def reset_pending() -> int:
+    """재분석 전 기존 검토대기 항목을 보류로 내린다. 승인/거절 이력은 보존."""
+    if not enabled():
+        return 0
+    return store.set_status_where("추천완료", "수집됨")

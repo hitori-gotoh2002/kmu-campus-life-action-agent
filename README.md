@@ -7,8 +7,8 @@
 ```
 노션      = 내 캘린더(회의·모임·회식 등 실제 일정) + 포트폴리오
 로컬 백엔드 = 프로필·추천이력·설정·졸업진단·시간표·API키  (modules/store.py, data/agent.db 자동생성)
-웹(Streamlit) = ⚙️설정(키·자동수신·시간표 PDF) · 📋추천 리뷰 · 🎓졸업 진단(영속)
-텔레그램  = 자동수신 분야 → 버튼 발송 → [승인] 시 노션 캘린더 등록
+웹(Streamlit) = ⚙️설정(키·자동수신·시간표 PDF) · 📌내 맞춤 추천함 · 🎓졸업 진단(영속)
+자동수신  = 설정 주기에 맞는 분야만 새 공지 분석·추천함 업데이트, 끄기는 수동 새로고침에서도 제외
 ```
 - API 키는 **웹 ⚙️설정**에서 입력(개인별 비서) → 로컬에만 저장
 - 추천 상세(요약·근거·체크리스트·원문 링크)는 **웹/백엔드**와 **노션 캘린더 일정 본문**에 함께 기록
@@ -78,11 +78,17 @@ python main.py
 |---|---|---|---|
 | 국민대 학사공지 | `www.kookmin.ac.kr/user/kmuNews/notice/index.do` | 서버렌더 (requests+bs4) | ✅ 연결됨 (목록+본문+PDF첨부) |
 | 국민대 경영대학 공지 | `biz.kookmin.ac.kr/community/notice/` | 서버렌더 (requests+bs4) | ✅ 연결됨 (목록+본문+PDF첨부) |
-| 링커리어 공모전 | `api.linkareer.com/graphql` (activityTypeID 3) | 공식 GraphQL API | ✅ 연결됨 (제목+기관+마감일) |
-| 링커리어 대외활동 | `api.linkareer.com/graphql` (activityTypeID 1) | 공식 GraphQL API | ✅ 연결됨 (제목+기관+마감일) |
+| 국민대 전체 장학공지 | `www.kookmin.ac.kr/user/kmuNews/notice/7/index.do` | 서버렌더 (requests+bs4) | ✅ 연결됨 (목록+본문+PDF첨부) |
+| 국민대 경영대학 장학공지 | `biz.kookmin.ac.kr/community/kookmin/scholarship/` | 서버렌더 (requests+bs4) | ✅ 연결됨 (목록+본문/PDF첨부 시도) |
+| 국민대 SW 취업공지 | `cs.kookmin.ac.kr/news/jobs/` | 서버렌더 (requests+bs4) | ✅ 연결됨 (AI/데이터/경영 키워드 필터) |
+| 링커리어 공모전 | `api.linkareer.com/graphql` (activityTypeID 3) | GraphQL API | ✅ 연결됨 (AI/데이터/경영 키워드 필터) |
+| 링커리어 대외활동 | `api.linkareer.com/graphql` (activityTypeID 1) | GraphQL API | ✅ 연결됨 (AI/데이터/경영 키워드 필터) |
+| 링커리어 채용·인턴 | `api.linkareer.com/graphql` (activityTypeID 5) | GraphQL API | ✅ 연결됨 (인턴·현장실습·AI/데이터 중심) |
+| 링커리어 교육·자격증 | `api.linkareer.com/graphql` (activityTypeID 6) | GraphQL API | ✅ 연결됨 (SQLD/ADsP/부트캠프 등 중심) |
 | 학과 인스타그램 | `instagram.com/kmuabm_official` | 로그인벽 + 안티봇 | ❌ 스크래핑 비권장 (대안 필요) |
 
-> 링커리어는 `status:OPEN`(모집중)을 최신순으로 조회. `LINKAREER_PAGE_SIZE`(기본 10)로 소스당 건수 조절.
+> 링커리어는 `status:OPEN`(모집중)을 최신순으로 조회. `LINKAREER_PAGE_SIZE`(기본 24)로 소스당 건수 조절.
+> 시연 기본값은 `SOURCE_FOCUS_FILTER=true` 이며, AI빅데이터융합경영학과 학생에게 맞는 키워드만 후보로 남긴다.
 
 - `TARGET_SOURCES` 에 `{name,url,base,parser}` 만 추가하면 소스 확장 가능.
 - `MAX_DETAIL_PER_SOURCE`(기본 8) 로 상세페이지 진입 수 제한.
@@ -103,8 +109,8 @@ python main.py
 
 | 에이전트 | 파일 | 역할 |
 |---|---|---|
-| Preferences | `modules/preferences.py` | 노션 '추천 설정' DB(분야/주기/채널). 분야별 매일·매주·수동·끄기 → 오늘 전달할 분야 결정 |
-| Digest | `modules/digest.py` | 후보를 분야별로 묶어 '추천서' 구성, 자동 전달 대상만 텔레그램 발송 |
+| Preferences | `modules/preferences.py` | 로컬 설정 DB(분야/주기/채널). 매일·매주 → 자동 업데이트, 수동 → 직접 새로고침, 끄기 → 자동/수동 모두 제외 |
+| Digest | `modules/digest.py` | 오늘 주기에 해당하는 분야만 분석·저장하고, 텔레그램 수신 분야의 1순위 추천을 발송 |
 | Scheduler | `scheduler.py` | 매일 정해진 시각에 digest 자동 실행 (APScheduler). Windows 작업 스케줄러로도 가능 |
 
 실행 모드(`.env DELIVERY_MODE`): `approval`(단건 승인·기본) / `digest`(분야별 추천서)
@@ -162,7 +168,7 @@ python main.py
 |---|---|---|
 | 성적증명서 추출 | `modules/transcript.py` | 이미지형 PDF → pypdfium2 렌더 → OpenAI 비전. 총학점·GPA·이수구분별 추출 (촘촘한 표는 비전이 불안정 → 웹에서 사람 검증) |
 | 졸업 진단 | `modules/graduation.py` | 이수구분별(성적) vs 기준학점(졸업요건 DB) → 구분별 부족·위험도. 미충족요건을 '내 프로필' 미충족졸업요건에 반영 → 추천이 계절학기·전공 우선 |
-| 통합 웹 | `app.py` + `pages/` | Streamlit 멀티페이지: 홈 / ①추천 리뷰 / ②졸업 진단(성적증명서 업로드) |
+| 통합 웹 | `app.py` + `pages/` | Streamlit 멀티페이지: 홈 / ①내 맞춤 추천함 / ②졸업 진단(성적증명서 업로드) |
 
 추가 노션 DB: 내 캘린더(시간표→가용시간), 졸업요건(기준학점), 이수내역
 추가 `.env`: `NOTION_CALENDAR_DB_ID`, `NOTION_GRAD_REQ_DB_ID`, `NOTION_GRAD_HISTORY_DB_ID`

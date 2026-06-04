@@ -21,10 +21,10 @@ st.caption("포트폴리오·웹 시간표·성적·노션 실제 일정을 한�
 st.divider()
 c = st.columns(2)
 with c[0]:
-    st.subheader("📋 커리어 추천")
+    st.subheader("📌 내 맞춤 추천함")
     st.write("학사·공모전·대외활동 공지를 분야별로 분석해, 내 강점·일정에 맞는 활동을 추천하고 "
              "노션 캘린더에 등록합니다.")
-    st.page_link("pages/1_추천_리뷰.py", label="추천 리뷰 열기 →")
+    st.page_link("pages/1_내_맞춤_추천함.py", label="내 맞춤 추천함 열기 →")
 with c[1]:
     st.subheader("🎓 졸업 진단")
     st.write("성적증명서(PDF)를 올리면 이수학점을 분석해 졸업까지 부족한 학점을 진단하고, "

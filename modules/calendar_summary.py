@@ -35,13 +35,54 @@ def _safe_int(value: Any, default: int = 0) -> int:
         return default
 
 
+# 크롤링 본문에서 흔한 노이즈(작성자/조회수/이전글 등) 제거
+_BODY_NOISE = re.compile(
+    r"(작성자|작성일|조회수|첨부파일|이전\s*글|다음\s*글|목록|등록일|담당자|담당부서|"
+    r"붙임\d*|☎|조회\s*\d+|\d{2,4}[.\-]\d{1,2}[.\-]\d{1,2})"
+)
+
+# 분야별 맞춤 준비 체크리스트
+_CHECKLISTS = {
+    "공모전·대회": ["모집요강에서 주제·제출물·심사기준 확인", "팀 구성 또는 개인 참가 결정",
+                "아이디어·분석 초안 작성", "제출물 점검 후 마감 전 제출"],
+    "대외활동·서포터즈": ["모집요강·활동기간·혜택 확인", "지원서/자기소개 항목 작성",
+                  "활동 가능 일정 점검", "마감 전 지원서 제출"],
+    "장학금": ["신청 자격요건(성적·소득 등) 충족 여부 확인", "필요 서류 준비",
+            "신청서 작성", "마감 전 제출"],
+    "자격증": ["시험 일정·접수기간 확인", "교재/강의 학습 계획 수립",
+            "기출·모의고사 풀이", "접수 및 응시"],
+    "채용·인턴": ["모집부문·자격요건 확인", "이력서/자기소개서 작성",
+              "포트폴리오 정리", "마감 전 지원"],
+    "학사일정": ["신청/처리 기한 확인", "필요 절차·서류 준비", "기한 내 처리"],
+}
+_DEFAULT_CHECK = ["공지 원문에서 자격·제출물·마감 확인", "필요 서류/준비물 정리", "마감 전 신청·제출"]
+
+_KIND = {
+    "공모전·대회": "공모전/대회", "대외활동·서포터즈": "대외활동·서포터즈", "장학금": "장학금",
+    "자격증": "자격증·교육", "채용·인턴": "인턴/채용형", "학사일정": "학사 일정", "기타": "추천 활동",
+}
+
+
+def _clean_body(body: str) -> str:
+    """크롤링 본문에서 노이즈 토큰을 걷어내고 의미 있는 앞부분만 남긴다."""
+    s = _clean(body)
+    if not s:
+        return ""
+    # 노이즈가 처음 나오는 지점 이전까지만 사용
+    m = _BODY_NOISE.search(s)
+    if m and m.start() > 25:
+        s = s[: m.start()]
+    s = _BODY_NOISE.sub(" ", s)
+    return _clean(s)
+
+
 def build_event_details(candidate: dict) -> dict:
-    """추천 후보를 노션 캘린더 페이지에 넣을 설명 구조로 변환한다."""
+    """추천 후보를 사용자에게 도움이 되는 설명 구조로 변환한다."""
     notice = candidate["notice"]
     analysis = candidate["analysis"]
 
     title = _clean(_get(notice, "title"))
-    body = _clean(_get(notice, "body"))
+    body = _clean_body(_get(notice, "body"))
     reason = _clean(_get(analysis, "matching_reason"))
     hours = _safe_int(_get(analysis, "estimated_hours_needed"))
     score = _safe_int(_get(analysis, "suitability_score"))
@@ -50,37 +91,34 @@ def build_event_details(candidate: dict) -> dict:
     source = _clean(_get(notice, "source"))
     deadline = _clean(_get(notice, "date") or candidate.get("deadline", ""))
     url = _clean(_get(notice, "url"))
+    kind = _KIND.get(category, "추천 활동")
 
-    summary_source = body or reason or f"{title} 관련 추천 활동입니다."
-    summary = _clip(summary_source, 420)
+    # 한눈에 들어오는 친절한 요약: 무엇인지 + 핵심 정보(마감/시간/적합도)
+    facts = []
+    if deadline:
+        facts.append(f"마감 {deadline}")
+    if hours:
+        facts.append(f"예상 준비 {hours}시간")
+    if score:
+        facts.append(f"내 진로 적합도 {score}/100")
+    # 요약: 크롤링 본문(노이즈 큼) 대신 '무엇 + 핵심 정보'로 깔끔하게.
+    summary = f"{kind} 추천" + (" · " + " · ".join(facts) if facts else "")
+
     short_description = _clip(
-        f"[{category}] {summary}"
-        + (f" 추천 근거: {reason}" if reason else ""),
+        f"[{category}] {title} — " + (" · ".join(facts) if facts else "추천 활동")
+        + (f" / 추천 이유: {reason}" if reason else ""),
         900,
     )
 
-    checklist = [
-        "원문 공지에서 신청 자격, 제출물, 세부 마감 시간을 확인합니다.",
-        "필요한 제출물과 참고 링크를 이 캘린더 페이지 안에 정리합니다.",
-    ]
-    if hours:
-        checklist.insert(1, f"예상 준비 시간 {hours}시간을 2~4회 작업 블록으로 나누어 진행합니다.")
+    checklist = list(_CHECKLISTS.get(category, _DEFAULT_CHECK))
     if deadline:
-        checklist.append(f"마감일({deadline}) 전날까지 최종 제출 상태를 확인합니다.")
+        checklist.append(f"마감일({deadline}) 전날까지 최종 점검·제출 상태 확인")
 
-    meta = []
-    if source:
-        meta.append(f"출처: {source}")
-    if category:
-        meta.append(f"분류: {category}")
+    meta = list(facts)
     if domain:
-        meta.append(f"도메인: {domain}")
-    if score:
-        meta.append(f"적합도: {score}/100")
-    if hours:
-        meta.append(f"예상 준비: {hours}시간")
-    if deadline:
-        meta.append(f"마감: {deadline}")
+        meta.append(f"도메인 {domain}")
+    if source:
+        meta.append(f"출처 {source}")
 
     return {
         "title": title,
@@ -93,6 +131,8 @@ def build_event_details(candidate: dict) -> dict:
         "score": score,
         "domain": domain,
         "category": category,
+        "hours": hours,
+        "deadline": deadline,
     }
 
 
