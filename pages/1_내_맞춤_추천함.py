@@ -5,6 +5,7 @@ import contextlib
 import datetime as dt
 import io
 import os
+import re
 from types import SimpleNamespace
 
 from dotenv import load_dotenv
@@ -14,7 +15,7 @@ os.environ["DEMO_MODE"] = "false"
 
 import streamlit as st
 
-from modules import calendar_summary, classifier, executor, history, preferences, store
+from modules import classifier, executor, history, preferences, store
 
 store.load_keys_into_env()
 
@@ -34,6 +35,7 @@ def row_to_web(row: dict) -> dict:
         "reason": row["reason"] or "",
         "domain": row["domain"] or "",
         "body": row.get("body") or "",
+        "summary": row.get("summary") or "",
         "created_at": row.get("created_at"),
         "status": row.get("status") or "",
     }
@@ -60,6 +62,7 @@ def add_to_notion(row: dict) -> None:
         suitability_score=int(row["score"]),
         estimated_hours_needed=int(row["hours"]),
         matching_reason=row["reason"],
+        summary=row.get("summary", ""),
         domain=row["domain"],
     )
     executor.execute_actions({"notice": notice, "analysis": analysis})
@@ -136,38 +139,6 @@ def short_body(row: dict, limit: int = 260) -> str:
     return text[: limit - 1].rstrip() + "…"
 
 
-def one_line_summary(row: dict, details: dict) -> str:
-    cat = row["category"]
-    title = row["title"]
-    deadline = row.get("deadline") or ""
-    source = row.get("source") or "수집 소스"
-    body = short_body(row)
-
-    if cat == "학사일정":
-        return f"국민대 공식 학사일정에서 확인한 일정입니다. 날짜와 내 시간표에 미치는 영향을 같이 확인하세요."
-    if cat == "장학금":
-        lead = "지원 자격과 제출서류를 확인해볼 장학 공지입니다."
-    elif cat == "공모전·대회":
-        lead = "포트폴리오에 남길 결과물을 만들 수 있는 공모전/대회 후보입니다."
-    elif cat == "대외활동·서포터즈":
-        lead = "활동 경험과 네트워킹을 만들 수 있는 대외활동 후보입니다."
-    elif cat == "채용·인턴":
-        lead = "지원 가능성을 검토해볼 채용·인턴 기회입니다."
-    elif cat == "자격증":
-        lead = "역량 증명이나 학습 계획에 연결할 수 있는 교육·자격증 후보입니다."
-    else:
-        lead = "추가로 검토해볼 추천 항목입니다."
-
-    meta = []
-    if source:
-        meta.append(source)
-    if deadline:
-        meta.append(f"마감 {deadline}")
-    context = " · ".join(meta)
-    detail = body or details.get("summary") or title
-    return f"{lead} {context}. {detail}".strip()
-
-
 def _clean_sentence(text: str) -> str:
     text = " ".join((text or "").split()).strip()
     return text.rstrip(".。")
@@ -184,62 +155,43 @@ def _period_from_body(row: dict) -> str:
     return rest.split(".", 1)[0].strip()
 
 
-def content_summary_points(row: dict, reason: str, warning: str) -> list[str]:
-    """저장된 원문/분석 정보를 조합해 사용자가 이해할 수 있는 요약 문장으로 확장."""
+def _to_sentences(text: str, limit: int = 3) -> list[str]:
+    """요약 문장을 사람이 읽기 좋은 단위로 끊는다(추천 이유는 포함하지 않음)."""
+    text = " ".join((text or "").split()).strip()
+    if not text:
+        return []
+    raw = re.split(r"(?<=다)\.\s+|(?<=요)\.\s+|(?<=음)\.\s+|[.!?]\s+|\n+|·\s+", text)
+    out = []
+    for s in raw:
+        s = s.strip().strip("·").strip()
+        if s:
+            out.append(s)
+    return out[:limit]
+
+
+def content_summary_points(row: dict) -> list[str]:
+    """추천 활동의 '내용'만 요약한다. (추천 이유·적합도 판단은 '왜 추천됐나요'로 분리)"""
     cat = row["category"]
     title = row["title"]
-    source = row.get("source") or "수집 소스"
-    body = _clean_sentence(short_body(row, 360))
-    deadline = row.get("deadline") or ""
-    hours = int(row.get("hours") or 0)
-    score = int(row.get("score") or 0)
-    domain = row.get("domain") or ""
-    reason_clean = _clean_sentence(reason)
 
-    points: list[str] = []
     if cat == "학사일정":
         period = _period_from_body(row)
-        points.append(f"무엇: 국민대 공식 학사일정의 `{title}` 일정입니다.")
+        points = [f"국민대 공식 학사일정의 `{title}` 일정입니다."]
         if period:
             points.append(f"기간: {period}")
         if "시험" in title:
-            points.append("의미: 시험 준비 시간이 필요한 기간이라 공모전·대외활동 추천의 가용시간을 크게 줄여 계산합니다.")
+            points.append("시험 준비 시간이 필요한 기간이라 공모전·대외활동 추천의 가용시간을 줄여 계산합니다.")
         elif "성적" in title:
-            points.append("의미: 성적 입력/확인과 관련된 행정 일정이라, 일정 확인용 정보로 보여줍니다.")
+            points.append("성적 입력/확인과 관련된 행정 일정이라 일정 확인용 정보로 보여줍니다.")
         else:
-            points.append("의미: 수강·등록·학적 같은 학사 행정 일정으로, 놓치지 않도록 정보성 추천으로 보여줍니다.")
+            points.append("수강·등록·학적 같은 학사 행정 일정이라 놓치지 않도록 정보성으로 보여줍니다.")
         return points
 
-    if body:
-        points.append(f"무엇: {body}")
-    else:
-        points.append(f"무엇: `{title}` 공지입니다. 원문에서 세부 모집 요강을 확인해야 합니다.")
-
-    fit_bits = []
-    if domain:
-        fit_bits.append(f"도메인 `{domain}`")
-    if score:
-        fit_bits.append(f"적합도 {score}점")
-    if fit_bits:
-        points.append(f"추천 판단: {' · '.join(fit_bits)} 기준으로 현재 프로필과 비교했습니다.")
-
-    if reason_clean:
-        points.append(f"왜 볼만한가: {reason_clean}")
-
-    schedule_bits = []
-    if deadline:
-        schedule_bits.append(f"마감 {deadline}")
-    if hours:
-        schedule_bits.append(f"예상 준비 {hours}시간")
-    if source:
-        schedule_bits.append(f"출처 {source}")
-    if schedule_bits:
-        points.append(f"확인 포인트: {' · '.join(schedule_bits)}")
-
-    if warning:
-        points.append("주의: 시험기간 가용시간을 넘을 수 있어 바로 시작하기보다 시험 이후 착수나 최소 작업 위주로 검토하는 편이 좋습니다.")
-
-    return points[:5]
+    text = (row.get("summary") or "").strip() or short_body(row, 320)
+    points = _to_sentences(text)
+    if not points:
+        points = [f"`{title}` 공고입니다. 아래 ‘원문 보기’에서 모집 대상·일정·혜택을 확인하세요."]
+    return points
 
 
 def next_steps(row: dict, warning: str) -> list[str]:
@@ -275,26 +227,6 @@ def next_steps(row: dict, warning: str) -> list[str]:
     return steps
 
 
-def candidate_from_row(row: dict) -> dict:
-    return {
-        "notice": SimpleNamespace(
-            title=row["title"],
-            url=row["url"],
-            date=row["deadline"],
-            source=row["source"],
-            category=row["category"],
-            body=row.get("body", ""),
-        ),
-        "analysis": SimpleNamespace(
-            suitability_score=int(row["score"]),
-            estimated_hours_needed=int(row["hours"]),
-            matching_reason=row["reason"],
-            domain=row["domain"],
-        ),
-        "category": row["category"],
-    }
-
-
 def render_category_cards(grouped: dict[str, list[dict]], all_rows: list[dict]) -> None:
     st.markdown("#### 분야별 추천함")
     stats_by_cat = category_status_counts(all_rows)
@@ -318,8 +250,6 @@ def render_category_cards(grouped: dict[str, list[dict]], all_rows: list[dict]) 
 
 
 def render_recommendation_card(row: dict, index: int) -> None:
-    cand = candidate_from_row(row)
-    details = calendar_summary.build_event_details(cand)
     warning, reason = split_schedule_warning(row.get("reason", ""))
 
     with st.container(border=True):
@@ -344,7 +274,7 @@ def render_recommendation_card(row: dict, index: int) -> None:
             st.warning(warning)
 
         st.markdown("**내용 요약**")
-        for point in content_summary_points(row, reason, warning):
+        for point in content_summary_points(row):
             st.markdown(f"- {point}")
 
         if reason:

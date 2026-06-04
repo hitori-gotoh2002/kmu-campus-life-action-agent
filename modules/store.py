@@ -33,6 +33,8 @@ def _conn():
         cols = {row[1] for row in c.execute("PRAGMA table_info(recommendations)")}
         if "body" not in cols:
             c.execute("ALTER TABLE recommendations ADD COLUMN body TEXT")
+        if "summary" not in cols:
+            c.execute("ALTER TABLE recommendations ADD COLUMN summary TEXT")
         yield c
         c.commit()
     except Exception:
@@ -95,8 +97,8 @@ def rec_exists(url: str) -> bool:
 def add_rec(rec: dict):
     with _conn() as c:
         c.execute("""INSERT INTO recommendations
-            (url,title,category,source,score,hours,deadline,reason,domain,status,body,created_at)
-            VALUES(:url,:title,:category,:source,:score,:hours,:deadline,:reason,:domain,:status,:body,:created_at)
+            (url,title,category,source,score,hours,deadline,reason,domain,status,body,summary,created_at)
+            VALUES(:url,:title,:category,:source,:score,:hours,:deadline,:reason,:domain,:status,:body,:summary,:created_at)
             ON CONFLICT(url) DO UPDATE SET
                 title=excluded.title,
                 category=excluded.category,
@@ -108,21 +110,22 @@ def add_rec(rec: dict):
                 domain=excluded.domain,
                 status=excluded.status,
                 body=excluded.body,
+                summary=excluded.summary,
                 created_at=excluded.created_at""",
             {**{k: rec.get(k) for k in
-                ("url", "title", "category", "source", "score", "hours", "deadline", "reason", "domain", "status", "body")},
+                ("url", "title", "category", "source", "score", "hours", "deadline", "reason", "domain", "status", "body", "summary")},
              "created_at": time.time()})
 
 
 def list_recs(status: str | None = None) -> list:
-    q = "SELECT url,title,category,source,score,hours,deadline,reason,domain,status,body,created_at FROM recommendations"
+    q = "SELECT url,title,category,source,score,hours,deadline,reason,domain,status,body,summary,created_at FROM recommendations"
     args = ()
     if status:
         q += " WHERE status=?"
         args = (status,)
     q += " ORDER BY score DESC"
     with _conn() as c:
-        cols = ["url", "title", "category", "source", "score", "hours", "deadline", "reason", "domain", "status", "body", "created_at"]
+        cols = ["url", "title", "category", "source", "score", "hours", "deadline", "reason", "domain", "status", "body", "summary", "created_at"]
         return [dict(zip(cols, row)) for row in c.execute(q, args)]
 
 

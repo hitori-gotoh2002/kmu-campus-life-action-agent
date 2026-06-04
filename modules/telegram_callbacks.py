@@ -88,6 +88,7 @@ def _candidate_from_row(row: dict) -> dict:
         suitability_score=int(row.get("score") or 0),
         estimated_hours_needed=int(row.get("hours") or 0),
         matching_reason=row.get("reason") or "",
+        summary=row.get("summary") or "",
         domain=row.get("domain") or "",
     )
     return {"notice": notice, "analysis": analysis, "category": row.get("category") or ""}

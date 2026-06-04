@@ -20,6 +20,7 @@ try:
     class AnalysisResult(BaseModel):
         is_relevant: bool = Field(description="학생 진로와 관련 있는 활동인지")
         suitability_score: int = Field(ge=0, le=100, description="적합도 0~100")
+        summary: str = Field(default="", description="활동 자체에 대한 객관적 내용 요약(왜 적합한지는 제외)")
         matching_reason: str = Field(description="적합/부적합 판단 근거")
         estimated_hours_needed: int = Field(ge=0, description="가중치 적용 후 예상 소요 시간")
         domain: str = Field(default="", description="분류된 도메인")
@@ -38,6 +39,7 @@ except ImportError:
         matching_reason: str
         estimated_hours_needed: int
         domain: str = ""
+        summary: str = ""
 
         def to_dict(self):
             return asdict(self)
@@ -109,10 +111,15 @@ def _heuristic_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
     reason = (f"[{domain}] 기본 {base_hours}h × {weight}배 = {est_hours}h. {weight_reason}. "
               f"희망직무 '{ctx.get('desired_role','')}' 관점에서 적합도 {score}점.")
 
+    body_txt = " ".join((notice.body or "").split()).strip()
+    summary = (body_txt[:200] if body_txt
+               else f"'{notice.title}' 공지입니다. 원문에서 모집 대상·일정·혜택을 확인하세요.")
+
     print(f"   [analyzer] 개인 역량 가중치 {weight}배 적용 완료  → {est_hours}시간")
     return AnalysisResult(
         is_relevant=score >= 50,
         suitability_score=score,
+        summary=summary,
         matching_reason=reason,
         estimated_hours_needed=est_hours,
         domain=domain,
@@ -124,7 +131,7 @@ def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
     sys_prompt = (
         "너는 국민대 AI빅데이터융합경영학과 학생의 커리어 매니저다. "
         "공지와 학생 프로필을 비교해 아래 JSON 스키마로만 답하라. "
-        "키: is_relevant(bool), suitability_score(int 0~100), matching_reason(str), "
+        "키: is_relevant(bool), suitability_score(int 0~100), summary(str), matching_reason(str), "
         "estimated_hours_needed(int), domain(str). JSON 외 텍스트 금지.\n"
         "[관련성 is_relevant 판단] — 분야별 추천이므로 폭넓게 인정한다\n"
         "- true: 학생이 직접 참여하는 모든 활동(공모전·대회·해커톤·대외활동·서포터즈·기자단·"
@@ -143,11 +150,16 @@ def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
         "인턴/현장실습 40, 자격증 50, 계절학기 45.\n"
         "- 보정: 학생 강점(high_proficiency) 분야면 ×0.7, 생소(low_proficiency) 분야면 ×1.5.\n"
         "- is_relevant=false 이면 estimated_hours_needed 는 0 으로 둔다.\n"
-        "[matching_reason]\n"
-        "- 사용자가 원문을 열기 전에도 이해할 수 있게 2~4문장으로 쓴다.\n"
-        "- 1문장: 이 공지가 무엇을 모집/안내하는지 요약한다.\n"
-        "- 2문장: 학생의 희망직무·강점·부족한 역량과 어떻게 연결되는지 설명한다.\n"
-        "- 3문장: 준비시간, 마감, 시험기간 부담처럼 실제 판단에 필요한 주의점을 적는다."
+        "[summary] — 활동 그 자체의 '내용 요약'(추천 이유 아님)\n"
+        "- 이 공지가 무엇을 모집/안내하는지 객관적인 사실만 2~3문장으로 쓴다.\n"
+        "- 모집 주체, 활동/혜택 내용, 지원 대상, 활동기간·신청마감 같은 사실 정보 위주.\n"
+        "- '학생에게 왜 적합한지'·적합도·강점 연결은 절대 쓰지 않는다(그건 matching_reason).\n"
+        "- 원문(body)에 정보가 부족하면 제목에서 알 수 있는 사실만 간단히 적는다.\n"
+        "- 원문에 있는 군더더기(작성자·조회수·이전글 등)는 빼고 핵심만 다듬어 쓴다.\n"
+        "[matching_reason] — '왜 이 학생에게 추천하는지'만 (활동 내용 재설명 금지)\n"
+        "- 활동이 무엇인지 다시 설명하지 말고, summary 와 내용이 겹치지 않게 쓴다.\n"
+        "- 1~2문장: 학생의 희망직무·강점·부족한 역량과 어떻게 연결되는지 설명한다.\n"
+        "- 1문장: 준비시간, 마감, 시험기간 부담처럼 실제 판단에 필요한 주의점을 적는다."
     )
     user_prompt = json.dumps({
         "notice": {"title": notice.title, "body": notice.body},

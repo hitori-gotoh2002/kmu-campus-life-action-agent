@@ -160,8 +160,11 @@ def execute_actions(candidate: dict) -> None:
         return
 
     details = calendar_summary.build_event_details(candidate)
-    _create_notion_schedule_block(n, a.estimated_hours_needed, details)
-    print("   [executor] 노션 캘린더에 일정 + 요약 설명 등록 완료")
+    created = _create_notion_schedule_block(n, a.estimated_hours_needed, details)
+    if created:
+        print("   [executor] 노션 캘린더에 일정 + 요약 설명 등록 완료")
+    else:
+        print("   [executor] 이미 등록된 일정으로 판단해 중복 생성 생략")
 
 
 def _ensure_detail_properties(notion, database_id: str) -> set[str]:
@@ -220,6 +223,24 @@ def _calendar_occupied(notion, db_id: str) -> dict:
     return occ
 
 
+def _schedule_exists(notion, db_id: str, title: str, details: dict, available_props: set[str]) -> bool:
+    """같은 원문/제목으로 이미 등록된 캘린더 항목이 있으면 중복 생성을 막는다."""
+    filters = []
+    if "원문" in available_props and details.get("url"):
+        filters.append({"property": "원문", "url": {"equals": details["url"]}})
+    filters.append({"property": "일정명", "title": {"equals": f"{title} 준비"}})
+
+    for flt in filters:
+        try:
+            resp = notion.databases.query(database_id=db_id, filter=flt, page_size=1)
+            if resp.get("results"):
+                return True
+        except Exception as e:
+            print(f"   [notion-schedule] 중복 확인 생략({e})")
+            return False
+    return False
+
+
 def _find_slot(notice, hours: int, notion, db_id: str):
     """마감일 기준 날짜 + 시간표/기존일정과 안 겹치는 빈 슬롯을 찾아 (날짜, 시작h, 종료h) 반환."""
     import datetime as dt
@@ -252,7 +273,7 @@ def _find_slot(notice, hours: int, notion, db_id: str):
     return target, 19, 19 + block
 
 
-def _create_notion_schedule_block(notice, hours: int, details: dict | None = None) -> None:
+def _create_notion_schedule_block(notice, hours: int, details: dict | None = None) -> bool:
     """승인된 활동을 Notion 캘린더에 추가.
     마감일 기준 + 빈 슬롯 탐색으로 날짜·시간을 분산 배치(한 날짜에 몰리지 않게)."""
     from notion_client import Client
@@ -268,6 +289,9 @@ def _create_notion_schedule_block(notice, hours: int, details: dict | None = Non
 
     details = details or {}
     available_props = _ensure_detail_properties(notion, schedule_db)
+    if _schedule_exists(notion, schedule_db, title, details, available_props):
+        print(f"   [notion-schedule] '{title} 준비'가 이미 캘린더에 있어 중복 생성 생략")
+        return False
     properties = {
         "일정명": {"title": [{"text": {"content": f"{title} 준비"}}]},
         "요일": {"select": {"name": _WD[day.weekday()]}},
@@ -292,7 +316,8 @@ def _create_notion_schedule_block(notice, hours: int, details: dict | None = Non
         properties=properties,
         children=children,
     )
-    print(f"   [notion-schedule] '{title} 준비' 일정 블록+설명 등록 완료 (캘린더 {sat} 반영)")
+    print(f"   [notion-schedule] '{title} 준비' 일정 블록+설명 등록 완료 (캘린더 {day} 반영)")
+    return True
 
 
 # (칸반 관련 코드 제거 — 새 구조에서 추천 상세는 웹/백엔드 보관, 노션엔 캘린더만)

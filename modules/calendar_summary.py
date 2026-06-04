@@ -82,7 +82,9 @@ def build_event_details(candidate: dict) -> dict:
     analysis = candidate["analysis"]
 
     title = _clean(_get(notice, "title"))
-    body = _clean_body(_get(notice, "body"))
+    # 활동 '내용 요약': LLM이 만든 summary(활동 자체 설명)를 우선 사용,
+    # 없으면 크롤링 본문에서 노이즈를 걷어낸 앞부분으로 대체.
+    content = _clean(_get(analysis, "summary")) or _clean_body(_get(notice, "body"))
     reason = _clean(_get(analysis, "matching_reason"))
     hours = _safe_int(_get(analysis, "estimated_hours_needed"))
     score = _safe_int(_get(analysis, "suitability_score"))
@@ -93,7 +95,7 @@ def build_event_details(candidate: dict) -> dict:
     url = _clean(_get(notice, "url"))
     kind = _KIND.get(category, "추천 활동")
 
-    # 한눈에 들어오는 친절한 요약: 무엇인지 + 핵심 정보(마감/시간/적합도)
+    # 핵심 정보(마감/시간/적합도) — 본문 요약과 별개로 한 줄에 모은다.
     facts = []
     if deadline:
         facts.append(f"마감 {deadline}")
@@ -101,14 +103,12 @@ def build_event_details(candidate: dict) -> dict:
         facts.append(f"예상 준비 {hours}시간")
     if score:
         facts.append(f"내 진로 적합도 {score}/100")
-    # 요약: 크롤링 본문(노이즈 큼) 대신 '무엇 + 핵심 정보'로 깔끔하게.
-    summary = f"{kind} 추천" + (" · " + " · ".join(facts) if facts else "")
 
-    short_description = _clip(
-        f"[{category}] {title} — " + (" · ".join(facts) if facts else "추천 활동")
-        + (f" / 추천 이유: {reason}" if reason else ""),
-        900,
-    )
+    # summary = 실제 '내용 요약'(추천 이유 아님). 없으면 종류+핵심정보로 대체.
+    summary = content or (f"{kind} 모집 공고" + (" · " + " · ".join(facts) if facts else ""))
+
+    # 노션 '설명' 속성에 들어갈 한 줄(간결). 추천 이유는 본문 블록으로 분리하므로 제외.
+    short_description = _clip(content or summary, 280)
 
     checklist = list(_CHECKLISTS.get(category, _DEFAULT_CHECK))
     if deadline:
@@ -122,10 +122,12 @@ def build_event_details(candidate: dict) -> dict:
 
     return {
         "title": title,
+        "content": content,
         "summary": summary,
         "short_description": short_description,
         "reason": _clip(reason, 800),
         "checklist": checklist,
+        "facts": facts,
         "meta": meta,
         "url": url,
         "score": score,
@@ -162,26 +164,33 @@ def _bullet(content: str) -> dict:
 def to_notion_children(details: dict) -> list[dict]:
     """Notion pages.create(children=...)에 넣을 블록 목록을 만든다."""
     blocks: list[dict] = []
-    blocks.append(_heading("활동 요약"))
-    blocks.append(_paragraph(details["summary"]))
 
+    # 1) 내용 요약 — 활동이 무엇인지(추천 이유와 분리)
+    blocks.append(_heading("📝 내용 요약"))
+    blocks.append(_paragraph(details.get("summary") or "원문에서 모집 요강을 확인하세요."))
+
+    # 2) 핵심 정보 — 마감/예상시간/적합도/도메인/출처를 글머리표로
     if details.get("meta"):
-        blocks.append(_paragraph(" · ".join(details["meta"])))
+        blocks.append(_heading("📌 핵심 정보"))
+        blocks.extend(_bullet(item) for item in details["meta"])
 
+    # 3) 추천 이유 — 왜 나에게 맞는지(내용 요약과 중복 X)
     if details.get("reason"):
-        blocks.append(_heading("추천 이유"))
+        blocks.append(_heading("🧭 추천 이유"))
         blocks.append(_paragraph(details["reason"]))
 
+    # 4) 준비 체크리스트
     if details.get("checklist"):
-        blocks.append(_heading("준비 체크리스트"))
+        blocks.append(_heading("✅ 준비 체크리스트"))
         blocks.extend(_bullet(item) for item in details["checklist"])
 
+    # 5) 원문 링크
     if details.get("url"):
-        blocks.append(_heading("원문 링크"))
+        blocks.append(_heading("🔗 원문 링크"))
         blocks.append({
             "object": "block",
             "type": "paragraph",
             "paragraph": {"rich_text": [_text("공지 원문 열기", details["url"])]},
         })
 
-    return blocks[:20]
+    return blocks[:30]

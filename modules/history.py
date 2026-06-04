@@ -52,6 +52,7 @@ def record(notice, analysis=None, status="수집됨", category=None) -> None:
         "hours": int(analysis.estimated_hours_needed) if analysis else None,
         "deadline": _norm_date(getattr(notice, "date", "")),
         "reason": (getattr(analysis, "matching_reason", "") if analysis else "") or "",
+        "summary": (getattr(analysis, "summary", "") if analysis else "") or "",
         "domain": (getattr(analysis, "domain", "") if analysis else "") or "",
         "status": status,
     })
@@ -68,7 +69,7 @@ def _to_web(r: dict) -> dict:
         "category": r["category"] or "기타", "source": r["source"] or "",
         "score": r["score"] or 0, "hours": r["hours"] or 0,
         "deadline": r["deadline"] or "", "reason": r["reason"] or "", "domain": r["domain"] or "",
-        "body": r.get("body") or "",
+        "body": r.get("body") or "", "summary": r.get("summary") or "",
     }
 
 
