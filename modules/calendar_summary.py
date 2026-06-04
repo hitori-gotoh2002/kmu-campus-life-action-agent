@@ -76,15 +76,69 @@ def _clean_body(body: str) -> str:
     return _clean(s)
 
 
+def _split_lines(text: str) -> list[str]:
+    """줄바꿈으로 구분된 키워드 항목을 글머리표 목록으로 분해한다."""
+    out = []
+    for ln in str(text or "").replace("\r", "\n").split("\n"):
+        ln = re.sub(r"[ \t]+", " ", ln).strip().lstrip("-•*‣◦·").strip()
+        if ln:
+            out.append(ln)
+    return out
+
+
+def _split_sentences(text: str, limit: int = 4) -> list[str]:
+    """줄바꿈이 없는 산문 요약을 읽기 좋은 문장 단위로 끊는다."""
+    s = _clean(text)
+    if not s:
+        return []
+    raw = re.split(r"(?<=다)\.\s+|(?<=요)\.\s+|(?<=음)\.\s+|[.!?]\s+", s)
+    return [p.strip().strip("·").strip() for p in raw if p.strip()][:limit]
+
+
+def _keyword_points(content: str, *, category: str, deadline: str,
+                    hours: int, source: str, domain: str, title: str) -> list[str]:
+    """활동 내용을 키워드 중심 3줄 이상으로 정리한다.
+    - LLM summary(줄바꿈 키워드)면 그대로 글머리표로.
+    - 산문이면 문장 단위로 분해.
+    - 그래도 3줄이 안 되면 분야/마감/시간/출처/도메인 같은 사실로 보강."""
+    points = _split_lines(content)
+    if len(points) <= 1:  # 줄바꿈이 없으면(과거 산문 요약/본문) 문장으로 분해
+        sent = _split_sentences(content)
+        if len(sent) > len(points):
+            points = sent
+
+    if len(points) < 3:
+        facts = [f"분야: {category}"]
+        if deadline:
+            facts.append(f"신청 마감: {deadline}")
+        if hours:
+            facts.append(f"예상 준비: {hours}시간")
+        if source:
+            facts.append(f"출처: {source}")
+        if domain:
+            facts.append(f"관련 도메인: {domain}")
+        for f in facts:
+            if f not in points:
+                points.append(f)
+
+    seen, uniq = set(), []
+    for p in points:
+        p = _clip(p, 120)
+        if p and p not in seen:
+            seen.add(p)
+            uniq.append(p)
+    return uniq[:6] or [f"'{title}' 공고 — 원문에서 모집 대상·일정·혜택을 확인하세요."]
+
+
 def build_event_details(candidate: dict) -> dict:
     """추천 후보를 사용자에게 도움이 되는 설명 구조로 변환한다."""
     notice = candidate["notice"]
     analysis = candidate["analysis"]
 
     title = _clean(_get(notice, "title"))
-    # 활동 '내용 요약': LLM이 만든 summary(활동 자체 설명)를 우선 사용,
-    # 없으면 크롤링 본문에서 노이즈를 걷어낸 앞부분으로 대체.
-    content = _clean(_get(analysis, "summary")) or _clean_body(_get(notice, "body"))
+    # 활동 '내용 요약': LLM이 만든 summary(키워드 줄바꿈)를 우선 사용 — 줄바꿈을 보존해야
+    # 키워드별 글머리표로 나눌 수 있으므로 _clean(공백 평탄화)을 적용하지 않는다.
+    content = str(_get(analysis, "summary") or "").strip() or _clean_body(_get(notice, "body"))
     reason = _clean(_get(analysis, "matching_reason"))
     hours = _safe_int(_get(analysis, "estimated_hours_needed"))
     score = _safe_int(_get(analysis, "suitability_score"))
@@ -104,11 +158,15 @@ def build_event_details(candidate: dict) -> dict:
     if score:
         facts.append(f"내 진로 적합도 {score}/100")
 
-    # summary = 실제 '내용 요약'(추천 이유 아님). 없으면 종류+핵심정보로 대체.
-    summary = content or (f"{kind} 모집 공고" + (" · " + " · ".join(facts) if facts else ""))
+    # 키워드 중심 3줄 이상의 '내용 요약' 글머리표(웹/노션 공통 단일 소스).
+    summary_points = _keyword_points(
+        content, category=category, deadline=deadline, hours=hours,
+        source=source, domain=domain, title=title,
+    )
+    summary = "\n".join(summary_points)
 
     # 노션 '설명' 속성에 들어갈 한 줄(간결). 추천 이유는 본문 블록으로 분리하므로 제외.
-    short_description = _clip(content or summary, 280)
+    short_description = _clip(" · ".join(summary_points), 300)
 
     checklist = list(_CHECKLISTS.get(category, _DEFAULT_CHECK))
     if deadline:
@@ -124,6 +182,7 @@ def build_event_details(candidate: dict) -> dict:
         "title": title,
         "content": content,
         "summary": summary,
+        "summary_points": summary_points,
         "short_description": short_description,
         "reason": _clip(reason, 800),
         "checklist": checklist,
@@ -165,9 +224,11 @@ def to_notion_children(details: dict) -> list[dict]:
     """Notion pages.create(children=...)에 넣을 블록 목록을 만든다."""
     blocks: list[dict] = []
 
-    # 1) 내용 요약 — 활동이 무엇인지(추천 이유와 분리)
+    # 1) 내용 요약 — 활동이 무엇인지 키워드 중심 글머리표(추천 이유와 분리)
     blocks.append(_heading("📝 내용 요약"))
-    blocks.append(_paragraph(details.get("summary") or "원문에서 모집 요강을 확인하세요."))
+    pts = details.get("summary_points") or _split_lines(details.get("summary", "")) \
+        or ["원문에서 모집 대상·일정·혜택을 확인하세요."]
+    blocks.extend(_bullet(p) for p in pts)
 
     # 2) 핵심 정보 — 마감/예상시간/적합도/도메인/출처를 글머리표로
     if details.get("meta"):

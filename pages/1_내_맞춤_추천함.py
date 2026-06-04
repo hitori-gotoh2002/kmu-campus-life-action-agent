@@ -5,7 +5,6 @@ import contextlib
 import datetime as dt
 import io
 import os
-import re
 from types import SimpleNamespace
 
 from dotenv import load_dotenv
@@ -15,7 +14,7 @@ os.environ["DEMO_MODE"] = "false"
 
 import streamlit as st
 
-from modules import classifier, executor, history, preferences, store
+from modules import calendar_summary, classifier, executor, history, preferences, store
 
 store.load_keys_into_env()
 
@@ -49,23 +48,27 @@ def load_recommendations() -> list[dict]:
     return rows
 
 
-def add_to_notion(row: dict) -> None:
+def candidate_from_row(row: dict) -> dict:
     notice = SimpleNamespace(
         title=row["title"],
         url=row["url"],
-        date=row["deadline"],
-        source=row["source"],
+        date=row.get("deadline", ""),
+        source=row.get("source", ""),
         category=row["category"],
         body=row.get("body", ""),
     )
     analysis = SimpleNamespace(
-        suitability_score=int(row["score"]),
-        estimated_hours_needed=int(row["hours"]),
-        matching_reason=row["reason"],
+        suitability_score=int(row.get("score") or 0),
+        estimated_hours_needed=int(row.get("hours") or 0),
+        matching_reason=row.get("reason", ""),
         summary=row.get("summary", ""),
-        domain=row["domain"],
+        domain=row.get("domain", ""),
     )
-    executor.execute_actions({"notice": notice, "analysis": analysis})
+    return {"notice": notice, "analysis": analysis, "category": row["category"]}
+
+
+def add_to_notion(row: dict) -> None:
+    executor.execute_actions(candidate_from_row(row))
     history.mark(row["url"], "승인")
 
 
@@ -155,22 +158,9 @@ def _period_from_body(row: dict) -> str:
     return rest.split(".", 1)[0].strip()
 
 
-def _to_sentences(text: str, limit: int = 3) -> list[str]:
-    """요약 문장을 사람이 읽기 좋은 단위로 끊는다(추천 이유는 포함하지 않음)."""
-    text = " ".join((text or "").split()).strip()
-    if not text:
-        return []
-    raw = re.split(r"(?<=다)\.\s+|(?<=요)\.\s+|(?<=음)\.\s+|[.!?]\s+|\n+|·\s+", text)
-    out = []
-    for s in raw:
-        s = s.strip().strip("·").strip()
-        if s:
-            out.append(s)
-    return out[:limit]
-
-
 def content_summary_points(row: dict) -> list[str]:
-    """추천 활동의 '내용'만 요약한다. (추천 이유·적합도 판단은 '왜 추천됐나요'로 분리)"""
+    """추천 활동의 '내용'만 키워드 중심 3줄 이상으로 요약한다.
+    (추천 이유·적합도 판단은 '왜 추천됐나요'로 분리, 노션과 동일한 단일 소스 사용)"""
     cat = row["category"]
     title = row["title"]
 
@@ -179,19 +169,18 @@ def content_summary_points(row: dict) -> list[str]:
         points = [f"국민대 공식 학사일정의 `{title}` 일정입니다."]
         if period:
             points.append(f"기간: {period}")
+        elif row.get("deadline"):
+            points.append(f"날짜: {row['deadline']}")
         if "시험" in title:
-            points.append("시험 준비 시간이 필요한 기간이라 공모전·대외활동 추천의 가용시간을 줄여 계산합니다.")
+            points.append("의미: 시험 준비 기간이라 공모전·대외활동 추천의 가용시간을 줄여 계산합니다.")
         elif "성적" in title:
-            points.append("성적 입력/확인과 관련된 행정 일정이라 일정 확인용 정보로 보여줍니다.")
+            points.append("의미: 성적 입력/확인과 관련된 행정 일정이라 일정 확인용 정보로 보여줍니다.")
         else:
-            points.append("수강·등록·학적 같은 학사 행정 일정이라 놓치지 않도록 정보성으로 보여줍니다.")
+            points.append("의미: 수강·등록·학적 같은 학사 행정 일정이라 놓치지 않도록 정보성으로 보여줍니다.")
         return points
 
-    text = (row.get("summary") or "").strip() or short_body(row, 320)
-    points = _to_sentences(text)
-    if not points:
-        points = [f"`{title}` 공고입니다. 아래 ‘원문 보기’에서 모집 대상·일정·혜택을 확인하세요."]
-    return points
+    # 비학사: 노션 캘린더와 동일한 키워드 요약(3줄 이상)을 단일 소스에서 생성
+    return calendar_summary.build_event_details(candidate_from_row(row))["summary_points"]
 
 
 def next_steps(row: dict, warning: str) -> list[str]:

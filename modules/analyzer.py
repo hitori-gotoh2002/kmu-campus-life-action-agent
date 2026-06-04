@@ -20,7 +20,7 @@ try:
     class AnalysisResult(BaseModel):
         is_relevant: bool = Field(description="학생 진로와 관련 있는 활동인지")
         suitability_score: int = Field(ge=0, le=100, description="적합도 0~100")
-        summary: str = Field(default="", description="활동 자체에 대한 객관적 내용 요약(왜 적합한지는 제외)")
+        summary: str = Field(default="", description="키워드 중심 3~5줄(줄바꿈 구분) 내용 요약 — 왜 적합한지는 제외")
         matching_reason: str = Field(description="적합/부적합 판단 근거")
         estimated_hours_needed: int = Field(ge=0, description="가중치 적용 후 예상 소요 시간")
         domain: str = Field(default="", description="분류된 도메인")
@@ -112,8 +112,13 @@ def _heuristic_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
               f"희망직무 '{ctx.get('desired_role','')}' 관점에서 적합도 {score}점.")
 
     body_txt = " ".join((notice.body or "").split()).strip()
-    summary = (body_txt[:200] if body_txt
-               else f"'{notice.title}' 공지입니다. 원문에서 모집 대상·일정·혜택을 확인하세요.")
+    _kw = [f"분야: {domain}"]
+    if body_txt:
+        _kw.append(f"내용: {body_txt[:70]}")
+    else:
+        _kw.append(f"활동: '{notice.title}' (원문에서 모집 요강 확인 필요)")
+    _kw.append(f"예상 준비: {est_hours}시간")
+    summary = "\n".join(_kw)
 
     print(f"   [analyzer] 개인 역량 가중치 {weight}배 적용 완료  → {est_hours}시간")
     return AnalysisResult(
@@ -150,12 +155,14 @@ def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
         "인턴/현장실습 40, 자격증 50, 계절학기 45.\n"
         "- 보정: 학생 강점(high_proficiency) 분야면 ×0.7, 생소(low_proficiency) 분야면 ×1.5.\n"
         "- is_relevant=false 이면 estimated_hours_needed 는 0 으로 둔다.\n"
-        "[summary] — 활동 그 자체의 '내용 요약'(추천 이유 아님)\n"
-        "- 이 공지가 무엇을 모집/안내하는지 객관적인 사실만 2~3문장으로 쓴다.\n"
-        "- 모집 주체, 활동/혜택 내용, 지원 대상, 활동기간·신청마감 같은 사실 정보 위주.\n"
+        "[summary] — 활동 내용을 '키워드 중심'으로 빠르게 파악하는 요약(추천 이유 아님)\n"
+        "- 반드시 줄바꿈(\\n)으로 구분된 3~5개 항목으로 쓴다(최소 3줄). 각 항목은 '키워드: 핵심내용' 형식.\n"
+        "- 사용할 키워드 예: 주최/주관, 활동 내용, 지원 대상, 혜택/우대, 활동 기간, 신청 마감, 신청 방법, 분야.\n"
+        "- 각 항목은 40자 내외로 짧고 명확하게. 문장이 아니라 키워드 요약으로 쓴다.\n"
+        "- 원문(body)에서 확인되는 사실만 쓰고, 작성자·조회수·이전글 같은 군더더기는 제외한다.\n"
         "- '학생에게 왜 적합한지'·적합도·강점 연결은 절대 쓰지 않는다(그건 matching_reason).\n"
-        "- 원문(body)에 정보가 부족하면 제목에서 알 수 있는 사실만 간단히 적는다.\n"
-        "- 원문에 있는 군더더기(작성자·조회수·이전글 등)는 빼고 핵심만 다듬어 쓴다.\n"
+        "- 정보가 부족하면 제목·분야에서 알 수 있는 항목으로라도 최소 3줄을 채운다.\n"
+        "- 예) \"주최: 덕화명란\\n활동: 서포터즈 3기, SNS 홍보·콘텐츠 제작\\n대상: 대학생 누구나\\n혜택: 활동비·수료증\\n신청 마감: 2026-06-21\"\n"
         "[matching_reason] — '왜 이 학생에게 추천하는지'만 (활동 내용 재설명 금지)\n"
         "- 활동이 무엇인지 다시 설명하지 말고, summary 와 내용이 겹치지 않게 쓴다.\n"
         "- 1~2문장: 학생의 희망직무·강점·부족한 역량과 어떻게 연결되는지 설명한다.\n"
