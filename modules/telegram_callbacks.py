@@ -131,12 +131,13 @@ def poll_once(timeout: int = 0, acknowledge: bool = True) -> dict:
     payload = resp.json()
     updates = payload.get("result", [])
     handled = 0
-    last_update_id = None
+    ack_update_id = None
 
     for update in updates:
-        last_update_id = update.get("update_id", last_update_id)
+        update_id = update.get("update_id")
         cb = update.get("callback_query")
         if not cb:
+            ack_update_id = update_id
             continue
         result = handle_callback(cb)
         answer = {
@@ -155,11 +156,16 @@ def poll_once(timeout: int = 0, acknowledge: bool = True) -> dict:
             pass
         if result in {"approved", "already_approved", "rejected"}:
             handled += 1
+            ack_update_id = update_id
+        elif result != "not_found":
+            ack_update_id = update_id
+        else:
+            break
 
-    if acknowledge and last_update_id is not None:
+    if acknowledge and ack_update_id is not None:
         requests.get(
             f"https://api.telegram.org/bot{token}/getUpdates",
-            params={"offset": last_update_id + 1, "timeout": 0, "allowed_updates": ["callback_query"]},
+            params={"offset": ack_update_id + 1, "timeout": 0, "allowed_updates": ["callback_query"]},
             timeout=10,
         )
     return {"ok": payload.get("ok", False), "updates": len(updates), "handled": handled}

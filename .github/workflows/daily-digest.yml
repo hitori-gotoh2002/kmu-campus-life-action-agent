@@ -1,0 +1,69 @@
+name: Daily KMU Digest
+
+on:
+  schedule:
+    # 08:00 Asia/Seoul = 23:00 UTC on the previous day.
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-kmu-digest
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      TZ: Asia/Seoul
+      DEMO_MODE: "false"
+      DELIVERY_MODE: digest
+      LLM_PROVIDER: openai
+      OPENAI_MODEL: gpt-4o-mini
+      SOURCE_FOCUS_FILTER: "true"
+      MAX_DETAIL_PER_SOURCE: "8"
+      LINKAREER_PAGE_SIZE: "24"
+      DIGEST_CATEGORIES: "공모전·대회,학사일정"
+      TELEGRAM_CATEGORIES: "공모전·대회,학사일정"
+      DIGEST_WEEKLY_DAY: "월"
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+      NOTION_CALENDAR_DB_ID: ${{ secrets.NOTION_CALENDAR_DB_ID }}
+      NOTION_PORTFOLIO_PAGE_ID: ${{ secrets.NOTION_PORTFOLIO_PAGE_ID }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Restore recommendation history
+        uses: actions/cache/restore@v4
+        with:
+          path: data/agent.db
+          key: kmu-agent-db-${{ github.run_id }}
+          restore-keys: |
+            kmu-agent-db-
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run daily digest
+        run: python main.py
+
+      - name: Save recommendation history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/agent.db
+          key: kmu-agent-db-${{ github.run_id }}

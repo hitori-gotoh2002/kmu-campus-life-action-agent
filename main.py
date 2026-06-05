@@ -301,14 +301,30 @@ def digest_run() -> None:
         return
     print("오늘 자동 업데이트 분야: " + ", ".join(sorted(due)))
 
-    candidates = _gather_candidates(ctx, allowed_categories=due)
+    prefs = preferences.load_preferences()
+    telegram_due = {
+        cat for cat in due
+        if prefs.get(cat, {}).get("채널") == "텔레그램"
+    }
+    web_due = due - telegram_due
+    candidates = []
+
+    # Telegram delivery should not wait for all web-only categories to finish.
+    if telegram_due:
+        print("텔레그램 우선 분석 분야: " + ", ".join(sorted(telegram_due)))
+        tg_candidates = _gather_candidates(ctx, allowed_categories=telegram_due)
+        candidates.extend(tg_candidates)
+        digest.deliver(tg_candidates, ctx)
+
+    if web_due:
+        print("웹 추천함 업데이트 분야: " + ", ".join(sorted(web_due)))
+        candidates.extend(_gather_candidates(ctx, allowed_categories=web_due))
 
     banner("분야별 추천서 (Digest)")
     if not candidates:
-        print("신규 추천이 없어 추천서를 보내지 않습니다.")
+        print("신규 추천이 없습니다.")
         return
     _print_ranking(candidates)
-    digest.deliver(candidates, ctx)
 
 
 if __name__ == "__main__":

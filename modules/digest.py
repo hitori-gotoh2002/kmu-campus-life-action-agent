@@ -9,11 +9,24 @@ Digest 에이전트 — 채널 인식 + 분야별 1순위.
 """
 from __future__ import annotations
 
+import datetime as dt
 import os
+from pathlib import Path
 
 from modules import preferences, calendar_summary, telegram_callbacks, history
 
 MAX_TELEGRAM = 8
+LOG_PATH = Path("data/scheduler.log")
+
+
+def _log(message: str) -> None:
+    line = f"[{dt.datetime.now():%Y-%m-%d %H:%M:%S}] {message}"
+    try:
+        LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass
 
 
 def _is_demo() -> bool:
@@ -22,7 +35,15 @@ def _is_demo() -> bool:
 
 def _tg(token: str, method: str, payload: dict):
     import requests
-    return requests.post(f"https://api.telegram.org/bot{token}/{method}", json=payload, timeout=30)
+    response = requests.post(f"https://api.telegram.org/bot{token}/{method}", json=payload, timeout=30)
+    try:
+        data = response.json()
+    except ValueError:
+        data = {}
+    if not response.ok or data.get("ok") is False:
+        description = data.get("description") or response.text[:200]
+        _log(f"[telegram] {method} 실패 status={response.status_code} desc={description}")
+    return response
 
 
 def _rank(c: dict):
@@ -77,12 +98,15 @@ def deliver(candidates: list, ctx: dict) -> None:
                    if cat not in have and cat not in history.INFO_CATEGORIES)
 
     print(f"   [digest] 텔레그램 발송 {len(to_send)}건 · 빈 분야 {len(empty)}건")
+    _log(f"[digest] 텔레그램 발송 대상 {len(to_send)}건 · 빈 분야 {len(empty)}건 · 분야={', '.join(sorted(tg_cats)) or '없음'}")
 
     if _is_demo():
+        _log("[digest] DEMO_MODE=true - 텔레그램 발송 생략")
         return
     token, chat = os.getenv("TELEGRAM_BOT_TOKEN"), os.getenv("TELEGRAM_CHAT_ID")
     if not token or not chat:
         print("   [digest] 텔레그램 미설정 → 발송 생략")
+        _log("[digest] 텔레그램 미설정 - 발송 생략")
         return
 
     for c in to_send:
@@ -91,3 +115,4 @@ def deliver(candidates: list, ctx: dict) -> None:
         _tg(token, "sendMessage", {"chat_id": chat,
             "text": "📭 오늘 " + ", ".join(empty) + " 분야엔 새 추천이 없습니다."})
     print("   [digest] 발송 완료 - 승인/거절은 리스너(scheduler)가 처리")
+    _log("[digest] 텔레그램 발송 완료")
