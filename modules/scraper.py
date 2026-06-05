@@ -701,8 +701,32 @@ def _dedupe_key(notice: Notice) -> tuple[str, str]:
     return ("url", notice.url)
 
 
-def collect_notices() -> list[Notice]:
-    """모든 타깃 소스에서 공지를 수집해 반환."""
+def _source_allowed(source: dict, allowed_categories: set[str] | None) -> bool:
+    """분야가 정해진 실행에서는 명백히 무관한 소스를 수집 전부터 건너뛴다."""
+    if not allowed_categories:
+        return True
+
+    hint = source.get("category_hint")
+    if hint:
+        return hint in allowed_categories
+
+    # 범용 게시판은 여러 분야가 섞이므로 필요한 분야와 겹칠 때만 유지한다.
+    source_groups = {
+        "국민대 학사공지": {"학사일정", "장학금", "기타"},
+        "국민대 경영대학 공지": {
+            "공모전·대회", "대외활동·서포터즈", "학사일정",
+            "채용·인턴", "자격증", "기타",
+        },
+    }
+    groups = source_groups.get(source.get("name"))
+    return bool(groups is None or groups & allowed_categories)
+
+
+def collect_notices(allowed_categories: set[str] | None = None) -> list[Notice]:
+    """타깃 소스에서 공지를 수집해 반환.
+
+    allowed_categories가 있으면 명백히 관련 없는 소스는 요청하지 않아 자동 갱신 시간을 줄인다.
+    """
     print("[1] 정보수집 에이전트 시작")
     if _is_demo():
         print("   [scraper] DEMO 모드 - 가짜 공지 데이터 사용")
@@ -716,6 +740,9 @@ def collect_notices() -> list[Notice]:
     seen_urls: set[str] = set()
     seen_keys: set[tuple[str, str]] = set()
     for source in TARGET_SOURCES:
+        if not _source_allowed(source, allowed_categories):
+            print(f"   [scraper] [{source['name']}] 업데이트 대상 분야가 아니라 수집 생략")
+            continue
         _polite_delay()
         for n in _fetch_source(source):
             if n.url in seen_urls:
@@ -728,12 +755,13 @@ def collect_notices() -> list[Notice]:
             seen_keys.add(dedupe_key)
             collected.append(n)
 
-    for n in _fetch_academic_calendar_notices():
-        if n.url in seen_urls:
-            continue
-        seen_urls.add(n.url)
-        seen_keys.add(_dedupe_key(n))
-        collected.append(n)
+    if not allowed_categories or "학사일정" in allowed_categories:
+        for n in _fetch_academic_calendar_notices():
+            if n.url in seen_urls:
+                continue
+            seen_urls.add(n.url)
+            seen_keys.add(_dedupe_key(n))
+            collected.append(n)
 
     print(f"   [scraper] 총 {len(collected)}건 수집\n")
     return collected

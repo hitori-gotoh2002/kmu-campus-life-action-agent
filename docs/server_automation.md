@@ -70,17 +70,19 @@ python scripts\migrate_sqlite_to_supabase.py --include-settings
 
 ## 분야 설정
 
-GitHub Actions의 기본값:
+기본값은 GitHub Variables가 아니라 Supabase에 저장된 웹 `설정` 화면의 값입니다.
 
-- 웹 추천함 갱신: `장학금,공모전·대회,대외활동·서포터즈,학사일정,채용·인턴,자격증,기타`
-- 텔레그램 발송: `공모전·대회,학사일정`
+- `매일`: 매일 08시 자동 분석
+- `매주`: `DIGEST_WEEKLY_DAY`에 해당하는 요일만 자동 분석
+- `수동`: 자동 분석 제외, 웹 새로고침 때만 분석
+- `끄기`: 자동 분석과 웹 새로고침 모두 제외
 
-GitHub Variables로 수정할 수 있습니다.
+GitHub Variables는 서버에서 임시로 강제하고 싶을 때만 사용합니다.
 
 | Variable | 의미 |
 |---|---|
-| `DIGEST_CATEGORIES` | 매일 수집·분석해 Supabase 추천함에 저장할 분야 |
-| `TELEGRAM_CATEGORIES` | 텔레그램으로 발송할 분야 |
+| `DIGEST_CATEGORIES` | 값이 있으면 웹 설정 대신 이 분야만 자동 분석 |
+| `TELEGRAM_CATEGORIES` | 값이 있으면 해당 분야를 텔레그램 채널로 강제 |
 
 예시:
 
@@ -88,6 +90,8 @@ GitHub Variables로 수정할 수 있습니다.
 DIGEST_CATEGORIES=장학금,공모전·대회,대외활동·서포터즈,학사일정,채용·인턴,자격증
 TELEGRAM_CATEGORIES=공모전·대회,채용·인턴
 ```
+
+웹 설정을 그대로 쓰려면 두 Variables를 만들지 않거나 빈 값으로 둡니다.
 
 ## 로컬 PC가 꺼져 있을 때
 

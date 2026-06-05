@@ -28,10 +28,10 @@ jobs:
       SOURCE_FOCUS_FILTER: "true"
       MAX_DETAIL_PER_SOURCE: "8"
       LINKAREER_PAGE_SIZE: "24"
-      # Web recommendation updates: analyze every non-off demo category daily.
-      # Telegram delivery is controlled separately by TELEGRAM_CATEGORIES below.
-      DIGEST_CATEGORIES: ${{ vars.DIGEST_CATEGORIES || '장학금,공모전·대회,대외활동·서포터즈,학사일정,채용·인턴,자격증,기타' }}
-      TELEGRAM_CATEGORIES: ${{ vars.TELEGRAM_CATEGORIES || '공모전·대회,학사일정' }}
+      # Leave these empty to respect Supabase/web settings.
+      # Set GitHub Variables with the same names only when a server-side override is needed.
+      DIGEST_CATEGORIES: ${{ vars.DIGEST_CATEGORIES }}
+      TELEGRAM_CATEGORIES: ${{ vars.TELEGRAM_CATEGORIES }}
       DIGEST_WEEKLY_DAY: "월"
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}

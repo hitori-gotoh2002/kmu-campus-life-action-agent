@@ -53,12 +53,11 @@ GitHub Actions는 로컬 PC가 꺼져 있어도 실행됩니다.
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-서버에서 매일 분석할 분야와 텔레그램으로 보낼 분야는 GitHub Variables로 조정할 수 있습니다.
+서버에서 매일 분석할 분야와 텔레그램으로 보낼 분야는 기본적으로 웹 `설정` 화면에 저장된 Supabase 설정을 따릅니다.
+GitHub Variables는 서버에서 임시로 강제하고 싶을 때만 사용합니다.
 
-- `DIGEST_CATEGORIES`: 웹 추천함을 갱신할 분야
-- `TELEGRAM_CATEGORIES`: 텔레그램으로 보낼 분야
-
-기본값은 모든 분야를 매일 분석하고, 텔레그램은 `공모전·대회`, `학사일정`을 발송합니다.
+- `DIGEST_CATEGORIES`: 값이 있으면 웹 설정 대신 이 분야만 자동 분석
+- `TELEGRAM_CATEGORIES`: 값이 있으면 해당 분야를 텔레그램 채널로 강제
 
 ## 데이터 흐름
 
@@ -158,5 +157,6 @@ GitHub Actions는 로컬 PC가 꺼져 있어도 실행됩니다.
 
 - `.env`와 `data/`는 커밋하지 않습니다.
 - 운영 자동화는 Supabase를 기준으로 동작하므로 GitHub Actions에서 `STORE_BACKEND=supabase`가 필요합니다.
+- GitHub Variables `DIGEST_CATEGORIES`를 비워두면 웹 설정의 `매일/매주/수동/끄기`가 서버 자동화에도 그대로 적용됩니다.
 - Notion은 캘린더와 포트폴리오만 사용합니다. 추천 이력/설정/졸업 데이터는 Supabase 또는 SQLite에 있습니다.
 - 텔레그램 발송은 설정된 분야의 1순위 추천 중심입니다. 정보성 분야는 여러 건이 같이 갈 수 있습니다.

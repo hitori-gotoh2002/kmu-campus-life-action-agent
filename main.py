@@ -132,7 +132,7 @@ def _gather_candidates(
 ) -> list:
     """수집 → 분류 → 마감/신규필터 → 분석 → Critic(규칙+LLM) → 일정검증 → 후보."""
     banner("[1] 정보수집 에이전트")
-    notices = scraper.collect_notices()
+    notices = scraper.collect_notices(allowed_categories=allowed_categories)
 
     fb = feedback.category_adjustments()                          # 피드백 학습
     if history.enabled():
