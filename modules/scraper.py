@@ -292,6 +292,74 @@ def _extract_pdf_attachment(links, base: str) -> str | None:
     return None
 
 
+def _career_body_is_sparse(body: str) -> bool:
+    text = re.sub(r"\s+", " ", body or "").strip()
+    if len(text) < 260:
+        return True
+    sparse_markers = ("자세한 사항은 홈페이지 참고", "자세한 내용은 홈페이지 참고")
+    return any(marker in text for marker in sparse_markers)
+
+
+def _external_urls_from_text(text: str) -> list[str]:
+    urls = re.findall(r"https?://[^\s)>\]]+", text or "")
+    out: list[str] = []
+    for url in urls:
+        clean = url.rstrip(".,")
+        low = clean.lower().split("?")[0]
+        if "kookmin.ac.kr" in low:
+            continue
+        if low.endswith((".pdf", ".hwp", ".hwpx", ".doc", ".docx", ".zip", ".png", ".jpg", ".jpeg")):
+            continue
+        out.append(clean)
+    return list(dict.fromkeys(out))
+
+
+def _fetch_external_page_brief(url: str) -> str:
+    """채용 공고 외부 링크가 있을 때 HTML의 공개 요약 신호만 짧게 보강한다."""
+    try:
+        resp = requests.get(url, headers=BROWSER_HEADERS, timeout=10, allow_redirects=True)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"   [scraper] 외부 채용 상세 보강 실패({url}): {e}")
+        return ""
+    content_type = resp.headers.get("Content-Type", "").lower()
+    if content_type and "html" not in content_type:
+        return ""
+    if not resp.encoding or resp.encoding.lower() == "iso-8859-1":
+        resp.encoding = resp.apparent_encoding
+    soup = BeautifulSoup(resp.text, "html.parser")
+    parts: list[str] = []
+    title = soup.find("title")
+    if title:
+        parts.append(title.get_text(" ", strip=True))
+    for selector in (
+        {"name": "description"},
+        {"property": "og:description"},
+        {"name": "twitter:description"},
+    ):
+        meta = soup.find("meta", attrs=selector)
+        if meta and meta.get("content"):
+            parts.append(meta["content"])
+    for tag in soup.select("h1, h2")[:4]:
+        text = tag.get_text(" ", strip=True)
+        if text:
+            parts.append(text)
+    brief = " / ".join(dict.fromkeys(_clean_text(p) for p in parts if _clean_text(p)))
+    del resp, soup
+    return brief[:900]
+
+
+def _enrich_sparse_career_body(notice: Notice) -> None:
+    if notice.category != "채용·인턴" or not _career_body_is_sparse(notice.body):
+        return
+    urls = _external_urls_from_text(notice.body)
+    if not urls:
+        return
+    brief = _fetch_external_page_brief(urls[0])
+    if brief:
+        notice.body = (notice.body.rstrip() + f"\n외부 상세 요약: {brief}")[:BODY_MAX_CHARS]
+
+
 def _fill_detail(notice: Notice, parser: str, base: str) -> None:
     """상세페이지를 받아 body + attachment_url 을 채운다(인메모리)."""
     try:
@@ -321,6 +389,7 @@ def _fill_detail(notice: Notice, parser: str, base: str) -> None:
     file_links = scope.find_all("a", href=lambda h: h and any(
         k in h.lower() for k in ["download", "filedown", "/file", "wfile", ".pdf", ".hwp"]))
     notice.attachment_url = _extract_pdf_attachment(file_links, base)
+    _enrich_sparse_career_body(notice)
 
     del html, soup  # 원본 즉시 파기
 

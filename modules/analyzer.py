@@ -73,6 +73,7 @@ _CAREER_DEMO_NEGATIVE = (
     "교학팀", "생활관", "법무", "인사팀", "고객응대", "수납", "학술팀",
     "영업 담당자", "고객 기술 지원",
 )
+_URL_RE = re.compile(r"https?://[^\s)>\]]+")
 
 
 def _body_excerpt(text: str, limit: int = 1200) -> str:
@@ -85,6 +86,124 @@ def _body_excerpt(text: str, limit: int = 1200) -> str:
     if cut >= int(limit * 0.6):
         return chunk[: cut + 1].strip()
     return chunk.rstrip(" ,.;:·") + "…"
+
+
+def _summary_is_thin(summary: str) -> bool:
+    text = (summary or "").strip()
+    if not text:
+        return True
+    if len(text) < 260 or text.count("\n") < 3:
+        return True
+    thin_phrases = (
+        "자세한 사항은 홈페이지 참고",
+        "자세한 내용은 홈페이지 참고",
+        "원문에서 모집 대상·일정·혜택을 확인",
+        "게시물 내용",
+    )
+    return any(phrase in text for phrase in thin_phrases)
+
+
+def _clean_career_text(text: str) -> str:
+    text = text or ""
+    text = re.sub(r"작성일\s*\d{2}\.\d{2}\.\d{2}", " ", text)
+    text = re.sub(r"구분\s*취업", " ", text)
+    text = re.sub(r"작성자\s*\S+", " ", text)
+    text = re.sub(r"조회수\s*\d+", " ", text)
+    text = text.replace("게시물 내용", " ")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _extract_labeled_value(text: str, labels: tuple[str, ...], limit: int = 160) -> str:
+    for label in labels:
+        pattern = rf"(?:\[{re.escape(label)}\]|{re.escape(label)})\s*[:：]?\s*([^\n\[]{{2,{limit}}})"
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            value = " ".join(match.group(1).split()).strip(" -:：|")
+            if value:
+                return _body_excerpt(value, limit)
+    return ""
+
+
+def _extract_external_detail(text: str, limit: int = 320) -> str:
+    match = re.search(r"외부\s+상세\s+요약\s*[:：]\s*(.+)", text)
+    if not match:
+        return ""
+    return _body_excerpt(match.group(1).strip(), limit)
+
+
+def _extract_org_and_role(title: str) -> tuple[str, str]:
+    title = " ".join((title or "").replace("…", "").split()).strip()
+    org = ""
+    match = re.match(r"\[([^\]]+)\]\s*(.+)", title)
+    if match:
+        org = match.group(1).strip()
+        title = match.group(2).strip()
+    else:
+        org = title.split()[0].strip("[]") if title else "모집 기관"
+    return org or "모집 기관", title or "채용·인턴 프로그램"
+
+
+def _infer_career_type(text: str) -> str:
+    low = text.casefold()
+    if any(k in low for k in ("kdt", "campus", "교육생", "양성", "채용연계")):
+        return "채용연계 교육/부트캠프"
+    if any(k in low for k in ("인턴", "intern", "trainee", "traineeship", "트레이니")):
+        return "인턴/트레이니"
+    if any(k in low for k in ("career session", "커리어세션")):
+        return "커리어 세션"
+    if any(k in low for k in ("pm", "개발자", "분석가", "data", "ai")):
+        return "직무 채용"
+    return "채용 정보"
+
+
+def _build_career_summary(notice, result: AnalysisResult) -> str:
+    title = getattr(notice, "title", "") or ""
+    body = getattr(notice, "body", "") or ""
+    source_url = getattr(notice, "url", "") or ""
+    text = _clean_career_text(f"{title}\n{body}")
+    org, role = _extract_org_and_role(title)
+    career_type = _infer_career_type(text)
+
+    deadline = (
+        _extract_labeled_value(text, ("모집기간", "모집 기간", "접수기간", "기간", "마감"), 120)
+        or _extract_labeled_value(title, ("~",), 80)
+    )
+    if not deadline:
+        match = re.search(r"\(~\s*([^)]+)\)", title)
+        deadline = f"~ {match.group(1).strip()}" if match else ""
+
+    field = _extract_labeled_value(text, ("모집분야", "모집 분야", "분야", "직무", "포지션"), 180)
+    target = _extract_labeled_value(text, ("모집대상", "대상", "지원자격", "자격요건"), 180)
+    apply = _extract_labeled_value(text, ("신청 방법", "지원 방법", "접수방법", "신청/제출", "지원/접수"), 180)
+    region = _extract_labeled_value(text, ("지역", "근무지", "장소"), 120)
+    external_detail = _extract_external_detail(text)
+    homepage = ""
+    urls = _URL_RE.findall(body)
+    if urls:
+        homepage = urls[0].rstrip(".,")
+
+    lines = [
+        f"{org}의 {role} 관련 {career_type} 공고입니다.",
+        f"모집/직무: {field or role}",
+    ]
+    if external_detail:
+        lines.append(f"외부 상세: {external_detail}")
+    lines.extend([
+        f"기간/마감: {deadline or '공고 원문에서 접수 마감일을 확인해야 합니다.'}",
+        f"지원/접수: {apply or '지원 방식, 제출서류, 전형 절차는 공고 링크에서 확인해야 합니다.'}",
+    ])
+    if target:
+        lines.append(f"대상/자격: {target}")
+    if region:
+        lines.append(f"근무/활동 지역: {region}")
+    lines.append(
+        "확인 포인트: 담당 업무나 교육 커리큘럼, 지원 자격, 전형 단계, 근무/교육 방식, 보상이나 수료 혜택을 원문에서 확인하세요."
+    )
+    if result.domain:
+        lines.append(f"분류 힌트: {result.domain} 계열로 분석됐고 예상 준비 시간은 약 {result.estimated_hours_needed}시간입니다.")
+    lines.append(f"원문: {homepage or source_url or '공고 링크를 앱에서 열어 확인하세요.'}")
+    return "\n".join(lines)
 
 
 def _classify_domain(text: str) -> str:
@@ -210,6 +329,8 @@ def _career_demo_relaxation(notice, result: AnalysisResult, strict_gate: bool = 
                 "시연 기준에서는 인턴, 채용형 프로그램, 커리어 세션처럼 학생이 진로 판단에 활용할 수 있는 "
                 "채용 정보를 추천 후보로 완화해 노출합니다."
             )
+    if _summary_is_thin(result.summary):
+        result.summary = _build_career_summary(notice, result)
     print("   [analyzer] 채용·인턴 시연 완화 기준 적용")
     return result
 
@@ -252,6 +373,9 @@ def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
         "- 사용자가 판단해야 하는 정보(자격 제한, 실제 해야 할 일, 제출물, 일정 부담, 선발 방식, 혜택, 비용/장소, 문의)를 "
         "최소 5개 이상 포함한다. 정보가 없는 라벨은 생략하되, 제목과 마감만으로 끝내지 않는다.\n"
         "- 공모전·대회 / 대외활동·서포터즈 / 채용·인턴은 주최/주관, 대상, 활동·직무·과제, 제출물, 일정, 혜택, 선발/평가 방식을 최대한 포함한다.\n"
+        "- 채용·인턴은 회사/기관명, 모집 직무나 교육명, 고용/프로그램 유형(인턴·트레이니·채용연계 교육·커리어세션 등), "
+        "지원 기간/마감, 지원 자격, 담당 업무나 교육 커리큘럼, 전형 절차, 근무/교육 방식, 지역, 지원 링크를 우선 정리한다. "
+        "원문 정보가 부족하면 부족한 항목을 '원문에서 확인 필요'라고 표시하되 한 줄 요약으로 끝내지 않는다.\n"
         "- 장학금은 신청 대상, 신청 기간, 신청 방법, 선발/지급 조건, 제출서류, 유의사항을 우선 포함한다.\n"
         "- 자격증·교육·학사일정은 일정, 대상, 해야 할 일, 비용/장소, 준비 부담, 주의사항 중심으로 정리한다.\n"
         "- 원문(body)에 있는 사실만 쓰고, 작성자·조회수·이전글 같은 군더더기는 제외한다.\n"
