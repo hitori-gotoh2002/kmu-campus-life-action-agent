@@ -158,45 +158,29 @@ def _period_from_body(row: dict) -> str:
     return rest.split(".", 1)[0].strip()
 
 
-def content_summary_points(row: dict) -> list[str]:
-    """추천 활동의 '내용'만 키워드 중심 3줄 이상으로 요약한다.
+def content_summary_text(row: dict) -> str:
+    """추천 활동의 '내용'을 자세히 풀어 쓴 산문 설명.
     (추천 이유·적합도 판단은 '왜 추천됐나요'로 분리, 노션과 동일한 단일 소스 사용)"""
     cat = row["category"]
     title = row["title"]
 
     if cat == "학사일정":
         period = _period_from_body(row)
-        points = [f"국민대 공식 학사일정의 `{title}` 일정입니다."]
+        parts = [f"국민대 공식 학사일정의 ‘{title}’ 일정입니다."]
         if period:
-            points.append(f"기간: {period}")
+            parts.append(f"일정 기간은 {period}입니다.")
         elif row.get("deadline"):
-            points.append(f"날짜: {row['deadline']}")
+            parts.append(f"일정 날짜는 {row['deadline']}입니다.")
         if "시험" in title:
-            points.append("의미: 시험 준비 기간이라 공모전·대외활동 추천의 가용시간을 줄여 계산합니다.")
+            parts.append("시험 준비가 필요한 기간이라 공모전·대외활동 추천의 가용 시간을 줄여 계산합니다.")
         elif "성적" in title:
-            points.append("의미: 성적 입력/확인과 관련된 행정 일정이라 일정 확인용 정보로 보여줍니다.")
+            parts.append("성적 입력·확인과 관련된 행정 일정이라 일정 확인용 정보로 보여줍니다.")
         else:
-            points.append("의미: 수강·등록·학적 같은 학사 행정 일정이라 놓치지 않도록 정보성으로 보여줍니다.")
-        return points
+            parts.append("수강·등록·학적 관련 행정 일정이라 놓치지 않도록 정보성으로 보여줍니다.")
+        return " ".join(parts)
 
-    # 비학사: 노션 캘린더와 동일한 키워드 요약(3줄 이상)을 단일 소스에서 생성
-    return calendar_summary.build_event_details(candidate_from_row(row))["summary_points"]
-
-
-def render_summary(points: list[str]) -> None:
-    """'항목: 내용' 줄이 2개 이상이면 정보표로, 아니면 글머리표로 렌더한다."""
-    rows = [calendar_summary.split_kv(p) for p in points]
-    keyed = [r for r in rows if r[0]]
-    if len(keyed) >= 2:
-        md = "| 항목 | 내용 |\n|:--|:--|\n"
-        for k, v in rows:
-            k = (k or "—").replace("|", "\\|")
-            v = (v or "").replace("|", "\\|")
-            md += f"| **{k}** | {v} |\n"
-        st.markdown(md)
-    else:
-        for k, v in rows:
-            st.markdown(f"- **{k}**: {v}" if k else f"- {v}")
+    # 비학사: 노션 캘린더와 동일한 상세 설명을 단일 소스에서 생성
+    return calendar_summary.build_event_details(candidate_from_row(row))["summary"]
 
 
 def next_steps(row: dict, warning: str) -> list[str]:
@@ -279,7 +263,7 @@ def render_recommendation_card(row: dict, index: int) -> None:
             st.warning(warning)
 
         st.markdown("**내용 요약**")
-        render_summary(content_summary_points(row))
+        st.write(content_summary_text(row))
 
         if reason:
             st.markdown("**왜 추천됐나요**")
