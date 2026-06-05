@@ -7,9 +7,12 @@
 """
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import os
 import re
+import traceback
+from pathlib import Path
 from types import SimpleNamespace
 
 import requests
@@ -21,9 +24,26 @@ from modules import executor, history, store
 load_dotenv()
 store.load_keys_into_env()
 
+LOG_PATH = Path("data/telegram_callbacks.log")
+
+
+def _sanitize(message: str) -> str:
+    message = re.sub(r"/bot[^/\s]+/", "/bot<hidden>/", message or "")
+    return re.sub(r"bot\d+:[A-Za-z0-9_-]+", "bot<hidden>", message)
+
 
 def callback_key(url: str) -> str:
     return hashlib.sha1((url or "").encode("utf-8")).hexdigest()[:12]
+
+
+def _log(message: str) -> None:
+    line = f"[{dt.datetime.now():%Y-%m-%d %H:%M:%S}] {_sanitize(message)}"
+    try:
+        LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass
 
 
 def _action(data: str) -> str | None:
@@ -100,21 +120,35 @@ def handle_callback(callback: dict) -> str:
     text = msg.get("text") or ""
     action = _action(data)
     if not action:
+        _log(f"[callback] ignored data={data[:24]}")
         return "ignored"
 
     row = _find_recommendation(data, text)
     if not row:
+        title = _title_from_text(text)
+        url = _url_from_text(text)
+        _log(f"[callback] not_found action={action} token={_token(data)} title={title[:80]} url={url}")
         return "not_found"
 
     if action == "reject":
         history.mark(row["url"], "거절")
+        _log(f"[callback] rejected title={row['title'][:80]} url={row['url']}")
         return "rejected"
 
     if row.get("status") == "승인":
+        _log(f"[callback] already_approved title={row['title'][:80]} url={row['url']}")
         return "already_approved"
 
-    executor.execute_actions(_candidate_from_row(row))
+    try:
+        executor.execute_actions(_candidate_from_row(row))
+    except Exception as e:
+        _log(
+            f"[callback] execute_failed title={row['title'][:80]} url={row['url']} "
+            f"error={type(e).__name__}: {e}\n{traceback.format_exc().rstrip()}"
+        )
+        return "execute_failed"
     history.mark(row["url"], "승인")
+    _log(f"[callback] approved title={row['title'][:80]} url={row['url']}")
     return "approved"
 
 
@@ -123,11 +157,15 @@ def poll_once(timeout: int = 0, acknowledge: bool = True) -> dict:
     if not token:
         return {"ok": False, "error": "TELEGRAM_BOT_TOKEN missing", "handled": 0}
 
-    resp = requests.get(
-        f"https://api.telegram.org/bot{token}/getUpdates",
-        params={"timeout": timeout, "allowed_updates": ["callback_query"]},
-        timeout=timeout + 10,
-    )
+    try:
+        resp = requests.get(
+            f"https://api.telegram.org/bot{token}/getUpdates",
+            params={"timeout": timeout, "allowed_updates": ["callback_query"]},
+            timeout=timeout + 10,
+        )
+    except requests.RequestException as e:
+        _log(f"[callback] poll_failed error={type(e).__name__}: {e}")
+        return {"ok": False, "error": type(e).__name__, "updates": 0, "handled": 0}
     payload = resp.json()
     updates = payload.get("result", [])
     handled = 0
@@ -145,6 +183,7 @@ def poll_once(timeout: int = 0, acknowledge: bool = True) -> dict:
             "already_approved": "이미 처리된 추천이에요.",
             "rejected": "추천을 무시 처리했어요.",
             "not_found": "추천 이력을 찾지 못했어요.",
+            "execute_failed": "노션 추가 중 오류가 났어요. 로그를 확인해 주세요.",
         }.get(result, "처리할 수 없는 버튼이에요.")
         try:
             requests.post(
@@ -157,17 +196,20 @@ def poll_once(timeout: int = 0, acknowledge: bool = True) -> dict:
         if result in {"approved", "already_approved", "rejected"}:
             handled += 1
             ack_update_id = update_id
-        elif result != "not_found":
+        elif result not in {"not_found", "execute_failed"}:
             ack_update_id = update_id
         else:
             break
 
     if acknowledge and ack_update_id is not None:
-        requests.get(
-            f"https://api.telegram.org/bot{token}/getUpdates",
-            params={"offset": ack_update_id + 1, "timeout": 0, "allowed_updates": ["callback_query"]},
-            timeout=10,
-        )
+        try:
+            requests.get(
+                f"https://api.telegram.org/bot{token}/getUpdates",
+                params={"offset": ack_update_id + 1, "timeout": 0, "allowed_updates": ["callback_query"]},
+                timeout=10,
+            )
+        except requests.RequestException as e:
+            _log(f"[callback] ack_failed update_id={ack_update_id} error={type(e).__name__}: {e}")
     return {"ok": payload.get("ok", False), "updates": len(updates), "handled": handled}
 
 
