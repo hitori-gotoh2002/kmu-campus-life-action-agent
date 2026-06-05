@@ -10,7 +10,14 @@
 - 실행 시각: 매일 08:00 KST
 - GitHub cron: `0 23 * * *` (UTC 기준)
 - 수동 실행: GitHub 저장소의 `Actions > Daily KMU Digest > Run workflow`
-- 기본 서버 추천/발송 분야: `공모전·대회`, `학사일정`
+- 기본 서버 웹 갱신 분야: `장학금`, `공모전·대회`, `대외활동·서포터즈`, `학사일정`, `채용·인턴`, `자격증`, `기타`
+- 기본 서버 텔레그램 발송 분야: `공모전·대회`, `학사일정`
+
+즉 텔레그램 발송을 받지 않는 분야도 `DIGEST_CATEGORIES`에 들어 있으면 매일 수집·분석되어 웹 추천함에 누적된다.
+
+주의: GitHub Actions가 갱신하는 추천 이력은 GitHub Actions 캐시에 저장되는 `data/agent.db` 기준이다.
+로컬 `localhost:8501` Streamlit 화면은 로컬 PC의 `data/agent.db`를 읽으므로, 로컬 화면까지 매일 자동 갱신하려면
+PC에서 `python scheduler.py`를 실행해 두거나 별도 원격 DB/호스팅 환경을 붙여야 한다.
 
 텔레그램의 `노션에 추가` / `무시` 버튼은 `Telegram Callback Processor`가 5분마다 확인한다.
 승인된 추천은 서버에서 Notion 캘린더에 추가되고, 처리 이력은 `data/agent.db` 캐시로 이어받는다.
@@ -31,14 +38,16 @@
 ## 분야 조정
 
 GitHub Actions 서버에서는 로컬 `data/agent.db`가 없을 수 있으므로 환경변수로 분야를 고정한다.
+기본값은 workflow에 들어 있으며, GitHub 저장소 `Settings > Secrets and variables > Actions > Variables`에서
+같은 이름의 Variables를 만들면 코드 수정 없이 덮어쓸 수 있다.
 
-- `DIGEST_CATEGORIES`: 매일 분석할 분야
+- `DIGEST_CATEGORIES`: 매일 분석해 웹 추천함을 갱신할 분야
 - `TELEGRAM_CATEGORIES`: 텔레그램으로 발송할 분야
 
 예시:
 
 ```yaml
-DIGEST_CATEGORIES: "장학금,공모전·대회,학사일정"
+DIGEST_CATEGORIES: "장학금,공모전·대회,대외활동·서포터즈,학사일정,채용·인턴,자격증"
 TELEGRAM_CATEGORIES: "공모전·대회,학사일정"
 ```
 
