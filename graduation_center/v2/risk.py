@@ -30,6 +30,14 @@ def _worse(a: str, b: str) -> str:
 def already_met(audit: AuditResult, context: StudentContext) -> bool:
     """S 판정 — 학점·요람 요건 전부 충족(결정론 hard-verify 가능 범위만).
     평점 unknown·필수 데이터 미구축은 S 금지(단정 금지 — R2)."""
+    # 졸업인증제(제96조의2): 다·부전공/융합 없으면 심화전공(전공최저+18) 충족까지 봐야 S.
+    # 안 보면 '다전공 빼면?' 상담이 인증제 경고를 두고도 S·'추가 수강 없이 충족'으로 단정
+    # (검증 캠페인 codex④ 발견, 2026-06-05). 면제 전형 존재는 B-경고 트리거와 동일하게
+    # '단정 금지' 방향으로만 작용 — S를 안 줄 뿐 D로 떨어뜨리지 않는다.
+    from graduation_center.v2.catalog import deep_major_extra as _dme
+    major = next((g for g in audit.area_gaps if g.area == "전공"), None)
+    cert_ok = bool(audit.convergence_checks) or (
+        major is not None and major.earned >= major.required + _dme(getattr(context, "admission_year", None)))
     return (audit.total_gap <= 0
             and all(g.gap <= 0 for g in audit.area_gaps)
             and all(g.gap <= 0 for g in audit.core_area_gaps)
@@ -40,7 +48,8 @@ def already_met(audit: AuditResult, context: StudentContext) -> bool:
             and bool(audit.gen_basic_courses)
             and all(g.get("taken") for g in audit.gen_basic_courses)
             and audit.required_check_available
-            and context.gpa_min_met == "yes")
+            and context.gpa_min_met == "yes"
+            and cert_ok)
 
 
 def compute_risk(

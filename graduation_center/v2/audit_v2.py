@@ -199,6 +199,11 @@ def _convergence_checks(verified: VerifiedTranscript, program_ids, tracks, prima
         except KeyError:
             prog_prefixes[ppid] = set()
     out = []
+    # 교과목별 중복인정 1회 제한(요람 전 학과 공통 문구: "제1전공 또는 다전공으로 이수한
+    # 교과목에 한해 1회만 중복인정") — 다전공 2개 동시 선언 시 같은 과목이 양쪽에서 dup되어
+    # 3중 인정되는 위반 차단(검증 캠페인 codex① 발견, 2026-06-05). 프로그램 처리 순서는
+    # 사용자 입력 순서(결정론) — 앞 프로그램이 dup 우선권을 가진다.
+    dup_used_prefixes: set[str] = set()
     for pid in program_ids or []:
         # 중복인정 겹침 = 제1전공 또는 '다른' 다전공의 전공과목과 동일(앞5자리) (학사규정 제77조)
         other_prefixes = set().union(*[pf for ppid, pf in prog_prefixes.items() if ppid != pid]) \
@@ -246,7 +251,11 @@ def _convergence_checks(verified: VerifiedTranscript, program_ids, tracks, prima
         overlap_ids = {id(c) for c in overlap}
         overlap_prefixes = {c.course_id[:5] for c in overlap}
         overlap_cr = round(sum(c.credits for c in overlap), 1)
-        double_recognizable = round(min(overlap_cr, cap), 1)
+        # 표시용 '중복인정 가능' — 앞 전공에서 이미 dup된 과목(1회 제한)은 이 전공에선 불가하므로
+        # 제외하고 산출. 안 빼면 후속 전공 카드에 "가능 12/12"가 거짓 표시됨(codex 표시정합 지적)
+        usable_overlap_cr = round(sum(c.credits for c in overlap
+                                      if c.course_id[:5] not in dup_used_prefixes), 1)
+        double_recognizable = round(min(usable_overlap_cr, cap), 1)
         # 제1전공/다른 다전공의 '전공필수' 코드 앞5자리 — 중복인정 권장·기본배정(ov_sorted)
         # 우선순위·융합이동금지 가드·배지에 공통 사용. **학생 학번 요람 기준**(연도별 필수명 →
         # 코드 해석), 연도 데이터 없는 프로그램만 카탈로그 is_required 폴백(2025 단일본 고정 방지).
@@ -280,7 +289,8 @@ def _convergence_checks(verified: VerifiedTranscript, program_ids, tracks, prima
             })
         # 중복인정 '추천' = 들은 겹침과목 중 제1전공/다전공 '전공필수' 우선(없으면 학점순), 한도(cap)까지.
         # 한도를 넘는 겹침 과목은 '후보'일 뿐(실제 중복인정 X, 한쪽에만 산입).
-        rec_pool = sorted([c for c in courses_view if c["taken"] and c["overlap"]],
+        rec_pool = sorted([c for c in courses_view if c["taken"] and c["overlap"]
+                           and c["course_id"][:5] not in dup_used_prefixes],   # 1회 제한 — 앞 전공 dup 제외
                           key=lambda c: (not c["primary_required"], -c["credits"]))
         rec, rec_keys, acc = [], set(), 0.0
         for c in rec_pool:
@@ -310,12 +320,20 @@ def _convergence_checks(verified: VerifiedTranscript, program_ids, tracks, prima
         alloc = {}                                       # id(course) → 'dup'/'primary'/'fusion'
         dup_cr = 0.0
         for c in ov_sorted:
+            if c.course_id[:5] in dup_used_prefixes:
+                continue                                 # 타 다전공에서 이미 중복인정 — 1회 제한
             if dup_cr + c.credits <= cap + 0.01:
                 alloc[id(c)] = "dup"; dup_cr = round(dup_cr + c.credits, 1)
+                dup_used_prefixes.add(c.course_id[:5])
         flex = [c for c in ov_sorted if id(c) not in alloc]
+        # 타 다전공에서 이미 중복인정 받은 과목은 이 전공에 산입 불가(1회 제한) → primary 고정
+        # (fusion 배정되면 제1전공+앞 전공+이 전공 3중 인정이 됨)
+        for c in flex:
+            if c.course_id[:5] in dup_used_prefixes:
+                alloc[id(c)] = "primary"
         # 제1전공/다전공 '전공필수' 겹침은 융합 전용 이동 불가(사용자 확정 규칙) → dup 아니면 primary 고정
         for c in flex:
-            if c.course_id[:5] in required_prefixes:
+            if c.course_id[:5] in required_prefixes and id(c) not in alloc:
                 alloc[id(c)] = "primary"
         req_primary_cr = round(sum(c.credits for c in flex if alloc.get(id(c)) == "primary"), 1)
         rest = [c for c in flex if id(c) not in alloc]
