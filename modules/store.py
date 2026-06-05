@@ -45,6 +45,13 @@ KEY_NAMES = [
     "OPENAI_GRADUATION_MODEL",
 ]
 
+_ENV_KEYS_CACHE: dict[str, str] | None = None
+
+
+def clear_env_key_cache() -> None:
+    global _ENV_KEYS_CACHE
+    _ENV_KEYS_CACHE = None
+
 
 @contextmanager
 def _conn():
@@ -361,6 +368,7 @@ def get_setting(key: str, default=None):
 
 
 def set_setting(key: str, value: str):
+    clear_env_key_cache()
     return _backend().set_setting(key, value)
 
 
@@ -368,9 +376,19 @@ def all_settings() -> dict:
     return _backend().all_settings()
 
 
-def load_keys_into_env():
-    for k in KEY_NAMES:
-        v = get_setting(k)
+def load_keys_into_env(force: bool = False):
+    """Load stored API keys into os.environ with a process-local cache.
+
+    Streamlit reruns the whole page on every button click. Without this cache,
+    each rerun queried Supabase once per key, which made ordinary UI clicks feel
+    slow even when no recommendation analysis was running.
+    """
+    global _ENV_KEYS_CACHE
+    if force or _ENV_KEYS_CACHE is None:
+        settings = all_settings()
+        _ENV_KEYS_CACHE = {k: settings.get(k, "") for k in KEY_NAMES}
+
+    for k, v in _ENV_KEYS_CACHE.items():
         if v:
             os.environ[k] = v
 

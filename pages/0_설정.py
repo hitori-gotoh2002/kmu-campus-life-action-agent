@@ -45,7 +45,7 @@ with st.form("keys"):
         for k, v in vals.items():
             if v.strip():
                 store.set_setting(k, v.strip())
-        store.load_keys_into_env()
+        store.load_keys_into_env(force=True)
         st.success("저장 완료! 이제 추천/졸업 기능을 사용할 수 있습니다.")
 
 st.divider()
