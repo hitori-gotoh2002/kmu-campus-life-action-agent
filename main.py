@@ -59,6 +59,17 @@ def _academic_info_analysis(n):
     )
 
 
+def _scholarship_info_analysis(n):
+    return analyzer.AnalysisResult(
+        is_relevant=True,
+        suitability_score=0,
+        summary="",
+        matching_reason="장학금 공지는 진로 적합도 순위보다 신청 가능성 확인이 중요한 정보성 추천입니다. 신청 기간, 대상, 제출서류를 확인할 수 있도록 추천함에 노출합니다.",
+        estimated_hours_needed=2,
+        domain="장학금",
+    )
+
+
 def _academic_info_validation() -> dict:
     return {
         "passed": True,
@@ -75,6 +86,10 @@ def _academic_info_validation() -> dict:
 
 def _is_official_academic_notice(n) -> bool:
     return n.category == "학사일정" and getattr(n, "source", "") == "국민대 공식 학사일정"
+
+
+def _is_scholarship_notice(n) -> bool:
+    return n.category == "장학금"
 
 
 def _schedule_warning(validation: dict) -> str:
@@ -157,6 +172,15 @@ def _gather_candidates(
             candidates.append(cand)
             history.record(n, result, status="추천완료", category=n.category)
             print("   → 7일 이내 공식 학사일정, 정보성 공지로 추천")
+            continue
+
+        if _is_scholarship_notice(n):
+            result = _scholarship_info_analysis(n)
+            v = _academic_info_validation()
+            cand = _make_candidate(n, result, v, fb)
+            candidates.append(cand)
+            history.record(n, result, status="추천완료", category=n.category)
+            print("   → 장학금 정보성 공지로 추천")
             continue
 
         parsed = document_ai.parse_attachment(n.attachment_url)   # [2]

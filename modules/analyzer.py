@@ -58,6 +58,22 @@ _DOMAIN_KEYWORDS = {
 }
 _BASE_HOURS = {"AI/데이터 모델링": 28, "서비스 기획/마케팅": 30, "학사/수강": 45, "기타": 20}
 
+_CAREER_DEMO_POSITIVE = (
+    "인턴", "intern", "채용형", "체험형", "현장실습", "직무체험", "트레이니",
+    "trainee", "커리어세션", "career session", "교육생", "양성", "채용연계",
+    "ai", "데이터", "data", "분석가", "analyst", "pm", "서비스 기획",
+    "개발자", "developer", "engineer", "신입", "주니어", "campus",
+)
+_CAREER_DEMO_STRONG = (
+    "ai", "데이터", "data", "분석가", "analyst", "머신러닝", "ml",
+    "pm", "서비스 기획", "개발자", "developer", "engineer",
+)
+_CAREER_DEMO_NEGATIVE = (
+    "간호", "조리원", "수의사", "지게차", "소방", "생산관리", "계약직원",
+    "교학팀", "생활관", "법무", "인사팀", "고객응대", "수납", "학술팀",
+    "영업 담당자", "고객 기술 지원",
+)
+
 
 def _body_excerpt(text: str, limit: int = 1200) -> str:
     text = " ".join((text or "").split()).strip()
@@ -147,6 +163,57 @@ def _heuristic_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
     )
 
 
+def _career_demo_relaxation(notice, result: AnalysisResult, strict_gate: bool = False) -> AnalysisResult:
+    """Demo mode: keep career/internship recommendations visible for KMU AI/data students."""
+    if getattr(notice, "category", "") != "채용·인턴":
+        return result
+
+    text = f"{getattr(notice, 'title', '')} {getattr(notice, 'body', '')}".casefold()
+    has_negative = any(keyword.casefold() in text for keyword in _CAREER_DEMO_NEGATIVE)
+    has_positive = any(keyword.casefold() in text for keyword in _CAREER_DEMO_POSITIVE)
+    if strict_gate and has_negative:
+        result.is_relevant = False
+        result.suitability_score = min(int(result.suitability_score or 0), 20)
+        result.estimated_hours_needed = 0
+        result.matching_reason = "시연 기준에서도 전공/희망 직무와 거리가 먼 채용 공고라 추천에서 제외합니다."
+        return result
+    if strict_gate and not has_positive:
+        result.is_relevant = False
+        result.suitability_score = min(int(result.suitability_score or 0), 25)
+        result.estimated_hours_needed = 0
+        result.matching_reason = "시연 기준상 AI·데이터·PM·인턴·채용연계 교육 등과 연결되는 단서가 부족해 제외합니다."
+        return result
+    if has_negative or not has_positive:
+        return result
+
+    strong = any(keyword.casefold() in text for keyword in _CAREER_DEMO_STRONG)
+    target_score = 65 if strong else 55
+    result.is_relevant = True
+    result.suitability_score = max(int(result.suitability_score or 0), target_score)
+    if result.estimated_hours_needed <= 0:
+        intensive = any(keyword in text for keyword in ("인턴", "intern", "채용형", "현장실습", "신입", "주니어"))
+        result.estimated_hours_needed = 40 if intensive else 20
+    if result.estimated_hours_needed > 30:
+        result.estimated_hours_needed = 30
+    if not result.domain or result.domain == "기타":
+        result.domain = "AI/데이터 채용" if strong else "커리어 탐색"
+
+    weak_reason = ("무관" in (result.matching_reason or "")) or ("관련 없음" in (result.matching_reason or ""))
+    if weak_reason or not result.matching_reason:
+        if strong:
+            result.matching_reason = (
+                "시연 기준에서는 AI·데이터·PM·개발 직무와 연결되는 채용/인턴/교육 공고를 "
+                "커리어 탐색 후보로 넓게 인정합니다. 학생의 희망 직무와 직접 맞닿아 있어 추천함에 노출합니다."
+            )
+        else:
+            result.matching_reason = (
+                "시연 기준에서는 인턴, 채용형 프로그램, 커리어 세션처럼 학생이 진로 판단에 활용할 수 있는 "
+                "채용 정보를 추천 후보로 완화해 노출합니다."
+            )
+    print("   [analyzer] 채용·인턴 시연 완화 기준 적용")
+    return result
+
+
 def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
     provider = os.getenv("LLM_PROVIDER", "gemini").lower()
     sys_prompt = (
@@ -157,14 +224,18 @@ def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
         "[관련성 is_relevant 판단] — 분야별 추천이므로 폭넓게 인정한다\n"
         "- true: 학생이 직접 참여하는 모든 활동(공모전·대회·해커톤·대외활동·서포터즈·기자단·"
         "장학금·자격증·전공 계절학기·채용형/체험형 인턴·현장실습·직무체험 등). "
+        "채용·인턴 분야에서는 시연 기준상 AI/데이터/IT/PM/서비스기획 관련 인턴, 채용형 인턴, "
+        "트레이니, 채용연계 교육, 커리어 세션, 신입·주니어 채용도 학생의 진로 탐색 후보이면 true. "
         "데이터/AI와 직접 관련이 적어도 '활동'이면 true 로 두고, "
         "적합도(suitability_score)로만 차등한다.\n"
-        "- false: 학생 대상 인턴/현장실습이 아닌 정규직·계약직·직원·연구원 채용 공고, "
+        "- false: 학생 진로 탐색과 거리가 먼 정규직·계약직·직원·연구원 채용 공고, "
+        "간호·조리·지게차·생산관리·법무·인사·행정직처럼 전공/희망 직무와 명확히 무관한 공고, "
         "행정 안내(수강신청·등록·성적정정·수업평가·"
         "기숙사 등 학생이 '참여 주체'가 아닌 공지)만 false.\n"
         "[적합도 suitability_score]\n"
         "- 학생의 희망직무('AI 데이터 사이언티스트')와 강점(NLP·생성형AI·데이터모델링)에 "
-        "가까울수록 높게. AI/데이터/분석/모델링 활동 80~95, 일반 기획/마케팅/문학/건축 등 30~55, "
+        "가까울수록 높게. AI/데이터/분석/모델링 활동 80~95, AI/데이터/PM 채용·인턴·교육 60~85, "
+        "일반 기획/마케팅/문학/건축 등 30~55, "
         "무관/비참여 0~20.\n"
         "[소요시간 estimated_hours_needed] (관련 활동이면 절대 0 금지, 5~120 범위)\n"
         "- 기본: 공모전·경진대회 30, 해커톤 20, 대외활동·서포터즈(기간형) 35, "
@@ -247,12 +318,12 @@ def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
 
 def analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
     if _is_demo():
-        return _heuristic_analyze(notice, parsed_doc, ctx)
+        return _career_demo_relaxation(notice, _heuristic_analyze(notice, parsed_doc, ctx), strict_gate=True)
     try:
-        return _llm_analyze(notice, parsed_doc, ctx)
+        return _career_demo_relaxation(notice, _llm_analyze(notice, parsed_doc, ctx), strict_gate=False)
     except Exception as e:
         print(f"   [analyzer] LLM 실패({e}) → 휴리스틱 폴백")
-        return _heuristic_analyze(notice, parsed_doc, ctx)
+        return _career_demo_relaxation(notice, _heuristic_analyze(notice, parsed_doc, ctx), strict_gate=True)
 
 
 def critic_review(result: AnalysisResult, parsed_doc) -> tuple[bool, str]:
