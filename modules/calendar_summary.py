@@ -66,9 +66,14 @@ _RAW_NOTICE_MARKER_RE = re.compile(rf"(\s[1-9]\.\s|[{_CIRCLED_NUMBERS}※◎○]
 _LABEL_RE = re.compile(r"^\s*-?\s*([^:：]{2,24})\s*[:：]\s*(.+)$")
 _KNOWN_LABELS = (
     "대상", "지원 대상", "신청 대상", "참가 대상", "자격", "지원 자격", "신청 자격",
-    "기간", "신청 기간", "접수 기간", "활동 기간", "일정", "마감",
-    "방법", "신청 방법", "접수 방법", "제출 방법",
-    "혜택", "지원 내용", "선발", "주의사항", "유의사항", "문의",
+    "기간", "신청 기간", "접수 기간", "활동 기간", "일정", "마감", "기간/마감",
+    "방법", "신청 방법", "접수 방법", "제출 방법", "신청/제출",
+    "내용", "핵심 내용", "활동 내용", "활동/과제", "해야 할 일", "제출물",
+    "공모명", "공모내용", "공모자격", "공모기간", "응모방법", "접수방법", "지원방법",
+    "제출서류", "심사방법", "심사기준", "시상내역", "결과발표", "모집대상", "모집기간",
+    "분야", "관심 키워드",
+    "혜택", "지원 내용", "혜택/보상", "선발", "선발/평가", "평가 방식",
+    "주의사항", "유의사항", "판단 포인트", "비용", "장소", "문의",
 )
 _GOOD_SUMMARY_ENDINGS = (".", "!", "?", "…", "다", "요", "함", "됨", "가능", "제외", "참조", "확인")
 
@@ -134,14 +139,25 @@ def _looks_like_raw_notice_excerpt(text: str) -> bool:
     return len(_clean(text)) < 700 and bool(_RAW_NOTICE_MARKER_RE.search(text or ""))
 
 
+def _looks_too_thin_for_decision(text: str) -> bool:
+    normalized = _normalize_summary_text(text)
+    if not normalized:
+        return True
+    blocks = [p.strip() for p in normalized.split("\n") if p.strip()]
+    label_count = sum(1 for block in blocks if _LABEL_RE.match(block.strip()[1:].strip()
+                      if block.strip().startswith("-") else block.strip()))
+    return len(_clean(normalized)) < 360 or len(blocks) < 5 or label_count < 3
+
+
 def _choose_content(summary: str, body: str) -> str:
-    """저장된 요약이 중간에서 끊긴 경우 본문 기반 요약으로 복구한다."""
+    """저장된 요약이 너무 짧거나 끊긴 경우 본문 기반 정보로 보강한다."""
     summary = str(summary or "").strip()
     body_summary = _clean_body(body)
     should_recover = (
         _looks_truncated(summary)
         or _looks_like_raw_notice_excerpt(summary)
-    ) and len(body_summary) > len(_clean(summary)) + 80
+        or _looks_too_thin_for_decision(summary)
+    ) and len(body_summary) > len(_clean(summary)) + 180
     if summary and not should_recover:
         return summary
     return body_summary or summary

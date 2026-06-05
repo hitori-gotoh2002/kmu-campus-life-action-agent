@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+import json
 import os
 import random
 import re
@@ -125,11 +126,16 @@ TARGET_SOURCES = [
 # 상세페이지(본문/첨부) 진입 수집 상한 - 요청 과다 방지.
 # (실 운영에서는 '신규 공지만' 골라낸 뒤 진입하도록 main.py에서 dedup 권장)
 MAX_DETAIL_PER_SOURCE = int(os.getenv("MAX_DETAIL_PER_SOURCE", "8"))
-BODY_MAX_CHARS = 1500  # LLM 비용/노이즈 제어용 본문 길이 상한
+BODY_MAX_CHARS = 3000  # LLM 비용/노이즈 제어용 본문 길이 상한
 
 # 링커리어 GraphQL
 LINKAREER_GQL = "https://api.linkareer.com/graphql"
 LINKAREER_PAGE_SIZE = int(os.getenv("LINKAREER_PAGE_SIZE", "24"))
+LINKAREER_DETAIL_SECTIONS = (
+    "공모명", "공모내용", "공모자격", "공모기간", "응모방법", "접수방법", "지원방법",
+    "제출서류", "심사방법", "심사기준", "시상내역", "활동내용", "활동기간",
+    "모집대상", "모집기간", "지원자격", "혜택", "결과발표", "문의",
+)
 
 
 @dataclass
@@ -333,6 +339,162 @@ def _ms_to_date(ms) -> str:
         return ""
 
 
+def _names(items) -> str:
+    if not items:
+        return ""
+    names = []
+    for item in items:
+        if isinstance(item, dict):
+            name = item.get("name")
+        else:
+            name = str(item)
+        if name:
+            names.append(str(name).strip())
+    return ", ".join(dict.fromkeys(n for n in names if n))
+
+
+def _append_line(lines: list[str], label: str, value) -> None:
+    text = _clean_text(value)
+    if text:
+        lines.append(f"{label}: {text}")
+
+
+def _clean_text(value) -> str:
+    return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def _html_to_text(html: str) -> str:
+    if not html:
+        return ""
+    text = BeautifulSoup(html, "html.parser").get_text(separator=" ", strip=True)
+    return _clean_text(text)
+
+
+def _linkareer_detail_lines(text: str) -> list[str]:
+    text = _clean_text(text).replace("문 의", "문의")
+    if not text:
+        return []
+    for section in LINKAREER_DETAIL_SECTIONS:
+        text = re.sub(rf"^({re.escape(section)})\s+", r"\1: ", text)
+        text = re.sub(rf"\s+({re.escape(section)})\s+", r"\n\1: ", text)
+    lines = [line.strip(" -") for line in text.split("\n") if line.strip(" -")]
+    return lines
+
+
+def _activity_field(activity: dict, node: dict, key: str):
+    value = activity.get(key)
+    if value in (None, "", [], {}):
+        return node.get(key)
+    return value
+
+
+def _linkareer_reward_text(activity: dict, node: dict) -> str:
+    parts: list[str] = []
+    benefits = _names(_activity_field(activity, node, "benefits"))
+    if benefits:
+        parts.append(benefits)
+    additional = _activity_field(activity, node, "additionalBenefit")
+    if additional:
+        parts.append(str(additional))
+    reward = _activity_field(activity, node, "tenThousandUnitOfReward")
+    if reward:
+        parts.append(f"시상 규모 {reward}만원")
+    for item in _activity_field(activity, node, "integers") or []:
+        typ = item.get("type") or {}
+        name = typ.get("name")
+        integer = item.get("integer")
+        unit = typ.get("unit") or ""
+        if name and integer:
+            parts.append(f"{name} {integer}{unit}")
+    return ", ".join(dict.fromkeys(_clean_text(p) for p in parts if _clean_text(p)))
+
+
+def _linkareer_period(activity: dict, node: dict, start_key: str, end_key: str) -> str:
+    start = _ms_to_date(_activity_field(activity, node, start_key))
+    end = _ms_to_date(_activity_field(activity, node, end_key))
+    if start and end:
+        return f"{start} ~ {end}"
+    return start or end
+
+
+def _fetch_linkareer_detail(activity_id: str) -> dict:
+    """링커리어 상세 페이지의 Next.js 데이터에서 본문성 정보를 추출한다."""
+    url = f"https://linkareer.com/activity/{activity_id}"
+    try:
+        html = _get(url)
+    except Exception as e:
+        print(f"   [scraper] 링커리어 상세 수집 실패({url}): {e}")
+        return {}
+
+    soup = BeautifulSoup(html, "html.parser")
+    meta = soup.find("meta", attrs={"name": "description"})
+    description = meta.get("content", "") if meta else ""
+    script = soup.find("script", id="__NEXT_DATA__")
+    activity: dict = {}
+    seo_activity: dict = {}
+    detail_texts: list[str] = []
+    if script and script.string:
+        try:
+            data = json.loads(script.string)
+            page_data = (((data.get("props") or {}).get("pageProps") or {}).get("data") or {})
+            activity_data = page_data.get("activityData") or {}
+            activity = activity_data.get("activity") or {}
+            seo_activity = activity_data.get("activitySeo") or {}
+            for obj in (activity, seo_activity):
+                detail = (obj.get("detailText") or {}).get("text")
+                if detail:
+                    detail_texts.append(detail)
+                for text_obj in obj.get("texts") or []:
+                    text = text_obj.get("text")
+                    if text:
+                        detail_texts.append(text)
+        except (TypeError, ValueError):
+            pass
+    cleaned_details = [_html_to_text(text) for text in detail_texts]
+    detail_text = "\n".join(dict.fromkeys(text for text in cleaned_details if text))
+    del html, soup
+    return {
+        "description": _clean_text(description),
+        "detail_text": detail_text[:BODY_MAX_CHARS],
+        "activity": activity or seo_activity,
+    }
+
+
+def _build_linkareer_body(node: dict, source: dict, detail: dict | None = None) -> str:
+    detail = detail or {}
+    activity = detail.get("activity") or {}
+    type_name = ((activity.get("activityType") or node.get("activityType") or {}).get("name")
+                 or source["name"])
+    org = _activity_field(activity, node, "organizationName") or ""
+    lines: list[str] = []
+    intro = f"{org}에서 모집하는 {type_name}입니다." if org else f"{type_name} 모집 공고입니다."
+    lines.append(intro)
+    _append_line(lines, "요약", detail.get("description"))
+    lines.extend(_linkareer_detail_lines(detail.get("detail_text"))[:14])
+    _append_line(lines, "모집 대상", _names(_activity_field(activity, node, "targets")))
+    _append_line(lines, "모집 기간", _linkareer_period(activity, node, "recruitStartAt", "recruitCloseAt"))
+    _append_line(lines, "활동 기간", _linkareer_period(activity, node, "activityStartAt", "activityEndAt"))
+    _append_line(lines, "분야", _names(_activity_field(activity, node, "categories")))
+    _append_line(lines, "관심 키워드", _names(_activity_field(activity, node, "interests")))
+    apply_types = _names(_activity_field(activity, node, "applyTypes"))
+    apply_detail = _activity_field(activity, node, "applyDetail")
+    _append_line(lines, "신청 방법", " / ".join(p for p in [apply_types, _clean_text(apply_detail)] if p))
+    _append_line(lines, "혜택", _linkareer_reward_text(activity, node))
+    _append_line(lines, "지역", _names(_activity_field(activity, node, "regions")))
+    _append_line(lines, "참가 비용", _activity_field(activity, node, "cost"))
+    scale = _activity_field(activity, node, "recruitScale")
+    if str(scale or "").strip() not in ("", "0", "0.0"):
+        _append_line(lines, "모집 인원", scale)
+    _append_line(lines, "외부 링크", _activity_field(activity, node, "homepageURL"))
+    manager_phone = _clean_text(_activity_field(activity, node, "managerPhoneNumber"))
+    manager_email = _clean_text(_activity_field(activity, node, "managerEmail"))
+    manager_name = _clean_text(_activity_field(activity, node, "managerName"))
+    if manager_phone or manager_email:
+        manager_bits = [manager_name, manager_phone, manager_email]
+        _append_line(lines, "문의", " / ".join(_clean_text(x) for x in manager_bits if _clean_text(x)))
+    return "\n".join(lines)[:BODY_MAX_CHARS]
+
+
 def _fetch_linkareer(source: dict) -> list[Notice]:
     """링커리어 공식 GraphQL 로 모집중(OPEN) 활동을 최신순 수집."""
     type_id = source["activity_type_id"]
@@ -342,7 +504,11 @@ def _fetch_linkareer(source: dict) -> list[Notice]:
         "orderBy:{direction:DESC, field:CREATED_AT}, "
         "pagination:{page:1, pageSize:%d}) "
         "{ nodes { id title organizationName recruitStartAt recruitCloseAt "
-        "activityTypeID activityType { name } } totalCount } }"
+        "activityStartAt activityEndAt facetimePeriod recruitType homepageURL "
+        "activityTypeID activityType { name } benefits { name } targets { name } "
+        "regions { name } categories { name } interests { name } applyTypes { name } "
+        "applyDetail additionalBenefit tenThousandUnitOfReward cost recruitScale "
+        "integers { integer type { name unit } } } totalCount } }"
         % (type_id, LINKAREER_PAGE_SIZE)
     )
     try:
@@ -362,21 +528,36 @@ def _fetch_linkareer(source: dict) -> list[Notice]:
           f"최신 {len(nodes)}건 수집")
 
     notices: list[Notice] = []
+    node_by_url: dict[str, dict] = {}
     for n in nodes:
         type_name = (n.get("activityType") or {}).get("name") or source["name"]
         close = _ms_to_date(n.get("recruitCloseAt"))
-        org = n.get("organizationName") or ""
-        body = f"{org} 주최 {type_name}. 모집 마감 {close or '미정'}."
+        activity_id = str(n["id"])
+        url = f"https://linkareer.com/activity/{activity_id}"
+        body = _build_linkareer_body(n, source)
         notices.append(Notice(
             title=n.get("title", "").strip(),
             date=close,                      # 마감일을 date 로 사용
             body=body,
-            url=f"https://linkareer.com/activity/{n['id']}",
+            url=url,
             attachment_url=None,             # 링커리어 첨부는 포스터 이미지라 평가기준 파싱 대상 아님
             category=source.get("category_hint") or type_name,
             source=source["name"],
         ))
-    return _apply_focus_filter(source, notices)
+        node_by_url[url] = n
+
+    notices = _apply_focus_filter(source, notices)
+    detail_targets = notices[:MAX_DETAIL_PER_SOURCE]
+    if detail_targets:
+        print(f"   [scraper] [{source['name']}] 상세 본문 보강 {len(detail_targets)}건")
+    for notice in detail_targets:
+        node = node_by_url.get(notice.url) or {}
+        activity_id = notice.url.rstrip("/").split("/")[-1]
+        _polite_delay(short=True)
+        detail = _fetch_linkareer_detail(activity_id)
+        if detail:
+            notice.body = _build_linkareer_body(node, source, detail)
+    return notices
 
 
 def _fetch_source(source: dict) -> list[Notice]:
