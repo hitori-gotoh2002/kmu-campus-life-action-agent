@@ -1,92 +1,145 @@
-# 서버 자동 발송 설정
+# 서버 자동화 설정
 
-이 프로젝트는 GitHub Actions에서 매일 아침 텔레그램 추천 발송을 실행할 수 있다.
-로컬 PC가 꺼져 있어도 GitHub 서버가 `main.py`를 `digest` 모드로 실행한다.
+이 프로젝트는 GitHub Actions와 Supabase를 사용해 로컬 PC가 꺼져 있어도 추천 갱신과 텔레그램 발송을 수행합니다.
 
-## 실행 방식
+## 현재 운영 구조
 
-- 매일 추천 발송 워크플로: `.github/workflows/daily-digest.yml`
-- 텔레그램 버튼 처리 워크플로: `.github/workflows/telegram-callbacks.yml`
-- 실행 시각: 매일 08:00 KST
-- GitHub cron: `0 23 * * *` (UTC 기준)
-- 수동 실행: GitHub 저장소의 `Actions > Daily KMU Digest > Run workflow`
-- 기본 서버 웹 갱신 분야: `장학금`, `공모전·대회`, `대외활동·서포터즈`, `학사일정`, `채용·인턴`, `자격증`, `기타`
-- 기본 서버 텔레그램 발송 분야: `공모전·대회`, `학사일정`
+```text
+GitHub Actions
+├─ Daily KMU Digest: 매일 08:00 KST
+│  ├─ 웹 공지/링커리어/국민대 공지 수집
+│  ├─ LLM 추천 분석
+│  ├─ Supabase recommendations 업데이트
+│  └─ 텔레그램 수신 분야 발송
+└─ Telegram Callback Processor: 5분마다
+   ├─ 텔레그램 버튼 클릭 여부 확인
+   ├─ 승인/무시 상태를 Supabase에 반영
+   └─ 승인 시 Notion 캘린더에 일정 생성
+```
 
-즉 텔레그램 발송을 받지 않는 분야도 `DIGEST_CATEGORIES`에 들어 있으면 매일 수집·분석되어 웹 추천함에 누적된다.
+## 워크플로
 
-주의: 원격 DB를 설정하지 않으면 GitHub Actions가 갱신하는 추천 이력은 GitHub Actions 캐시에 저장되는
-`data/agent.db` 기준이다. 로컬 `localhost:8501` Streamlit 화면은 로컬 PC의 `data/agent.db`를 읽으므로,
-로컬 화면까지 매일 자동 갱신하려면 PC에서 `python scheduler.py`를 실행해 두거나 아래 Supabase 원격 DB를 붙여야 한다.
+| 워크플로 | 파일 | 실행 조건 |
+|---|---|---|
+| Daily KMU Digest | `.github/workflows/daily-digest.yml` | `0 23 * * *` UTC = 매일 08:00 KST |
+| Telegram Callback Processor | `.github/workflows/telegram-callbacks.yml` | `*/5 * * * *` = 5분마다 |
 
-## Supabase 원격 DB
+두 워크플로 모두 `STORE_BACKEND=supabase`를 명시합니다.  
+따라서 Supabase Secrets가 없으면 조용히 로컬 SQLite로 떨어지지 않고 실패하도록 되어 있습니다.
 
-Supabase를 붙이면 GitHub Actions, 로컬 Streamlit, 로컬 스케줄러가 모두 같은 추천 이력과 설정을 읽고 쓴다.
-따라서 로컬 PC가 꺼져 있어도 GitHub Actions가 08시에 추천을 갱신하면, 나중에 로컬 웹을 열었을 때 같은 최신 추천함을 볼 수 있다.
+## 필요한 GitHub Secrets
 
-1. Supabase 프로젝트를 만든다.
-2. Supabase SQL Editor에서 `docs/supabase_schema.sql` 내용을 실행한다.
-3. 로컬 `.env`에 아래 값을 넣는다.
+GitHub 저장소에서 `Settings > Secrets and variables > Actions > Repository secrets`에 등록합니다.
+
+| Secret | 용도 |
+|---|---|
+| `OPENAI_API_KEY` | 추천 분석과 요약 생성 |
+| `NOTION_API_KEY` | Notion 캘린더 일정 등록 |
+| `NOTION_CALENDAR_DB_ID` | 실제 일정/추천 일정이 들어가는 Notion DB |
+| `NOTION_PORTFOLIO_PAGE_ID` | 포트폴리오 페이지 분석 |
+| `TELEGRAM_BOT_TOKEN` | 텔레그램 메시지 발송/버튼 확인 |
+| `TELEGRAM_CHAT_ID` | 메시지를 받을 채팅 |
+| `SUPABASE_URL` | 원격 DB URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | 원격 DB 서버 권한 키 |
+
+## Supabase 초기 설정
+
+1. Supabase 프로젝트 생성
+2. SQL Editor에서 `docs/supabase_schema.sql` 실행
+3. 로컬 `.env`에 아래 값 추가
 
 ```env
+STORE_BACKEND=supabase
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-4. GitHub 저장소 `Settings > Secrets and variables > Actions > Repository secrets`에 아래 Secrets를 추가한다.
-
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-
-5. 기존 로컬 추천 이력을 원격 DB로 옮기려면 한 번 실행한다.
+4. GitHub Secrets에도 같은 Supabase 값 등록
+5. 기존 로컬 데이터를 원격으로 옮길 때 한 번 실행
 
 ```powershell
-python scripts/migrate_sqlite_to_supabase.py
+python scripts\migrate_sqlite_to_supabase.py
 ```
 
-API 키까지 `settings` 테이블에 같이 옮기려면 아래 옵션을 사용할 수 있지만, 보통은 GitHub Secrets와 로컬 `.env`에 두는 편이 낫다.
+기본 마이그레이션은 API 키가 들어 있는 `settings` 테이블을 옮기지 않습니다.  
+키까지 원격 DB에 옮기려면 아래 옵션을 쓰지만, 보통은 로컬 `.env`와 GitHub Secrets에 분리해 두는 편이 안전합니다.
 
 ```powershell
-python scripts/migrate_sqlite_to_supabase.py --include-settings
+python scripts\migrate_sqlite_to_supabase.py --include-settings
 ```
 
-텔레그램의 `노션에 추가` / `무시` 버튼은 `Telegram Callback Processor`가 5분마다 확인한다.
-승인된 추천은 서버에서 Notion 캘린더에 추가된다.
-Supabase를 설정하면 처리 이력은 Supabase에 저장되고, 설정하지 않으면 `data/agent.db` 캐시로 이어받는다.
+## 분야 설정
 
-## GitHub Secrets
+GitHub Actions의 기본값:
 
-저장소 `Settings > Secrets and variables > Actions > Repository secrets`에 아래 값을 등록한다.
+- 웹 추천함 갱신: `장학금,공모전·대회,대외활동·서포터즈,학사일정,채용·인턴,자격증,기타`
+- 텔레그램 발송: `공모전·대회,학사일정`
 
-- `OPENAI_API_KEY`
-- `NOTION_API_KEY`
-- `NOTION_CALENDAR_DB_ID`
-- `NOTION_PORTFOLIO_PAGE_ID`
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_CHAT_ID`
-- `SUPABASE_URL` (원격 DB 사용 시)
-- `SUPABASE_SERVICE_ROLE_KEY` (원격 DB 사용 시)
+GitHub Variables로 수정할 수 있습니다.
 
-현재 워크플로는 `LLM_PROVIDER=openai`, `OPENAI_MODEL=gpt-4o-mini`로 실행된다.
-
-## 분야 조정
-
-GitHub Actions 서버에서는 로컬 `data/agent.db`가 없을 수 있으므로 환경변수로 분야를 고정한다.
-기본값은 workflow에 들어 있으며, GitHub 저장소 `Settings > Secrets and variables > Actions > Variables`에서
-같은 이름의 Variables를 만들면 코드 수정 없이 덮어쓸 수 있다.
-
-- `DIGEST_CATEGORIES`: 매일 분석해 웹 추천함을 갱신할 분야
-- `TELEGRAM_CATEGORIES`: 텔레그램으로 발송할 분야
+| Variable | 의미 |
+|---|---|
+| `DIGEST_CATEGORIES` | 매일 수집·분석해 Supabase 추천함에 저장할 분야 |
+| `TELEGRAM_CATEGORIES` | 텔레그램으로 발송할 분야 |
 
 예시:
 
-```yaml
-DIGEST_CATEGORIES: "장학금,공모전·대회,대외활동·서포터즈,학사일정,채용·인턴,자격증"
-TELEGRAM_CATEGORIES: "공모전·대회,학사일정"
+```text
+DIGEST_CATEGORIES=장학금,공모전·대회,대외활동·서포터즈,학사일정,채용·인턴,자격증
+TELEGRAM_CATEGORIES=공모전·대회,채용·인턴
 ```
 
-## 주의
+## 로컬 PC가 꺼져 있을 때
 
-GitHub Actions 예약 실행은 GitHub 서버에서 동작하므로 로컬 PC 전원 상태와 무관하다.
-다만 예약 워크플로는 기본 브랜치에 올라간 파일 기준으로 실행되며, GitHub 서버 상황에 따라 몇 분 늦게 시작될 수 있다.
-텔레그램 버튼 처리도 최대 몇 분 지연될 수 있다.
+가능한 것:
+
+- 매일 08시 추천 수집/분석
+- Supabase 원격 DB 업데이트
+- 텔레그램 발송
+- 텔레그램 승인 버튼 확인
+- 승인된 추천의 Notion 캘린더 등록
+
+불가능한 것:
+
+- `localhost:8501` 접속
+
+로컬 웹은 PC가 켜져 있어야 열립니다. 다만 웹을 다시 열면 Supabase에 이미 저장된 최신 추천을 읽습니다.
+
+## 로컬 스케줄러와의 차이
+
+`python scheduler.py`는 로컬 PC가 켜져 있을 때만 동작합니다.  
+GitHub Actions 자동화가 켜져 있으면 운영 자동화는 GitHub Actions를 기준으로 보면 됩니다.
+
+로컬 스케줄러가 필요한 경우:
+
+- 개발 중 즉시 테스트
+- GitHub Actions를 쓰지 않는 개인 로컬 운영
+- 로컬 콘솔에서 로그를 직접 보고 싶을 때
+
+## 점검 방법
+
+로컬에서 Supabase 연결 확인:
+
+```powershell
+python -c "from dotenv import load_dotenv; load_dotenv(); from modules import store; print(store.active_backend()); print(len(store.list_recs()))"
+```
+
+정상 예:
+
+```text
+supabase
+118
+```
+
+GitHub Actions 상태 확인:
+
+1. GitHub 저장소 `Actions` 탭 열기
+2. `Daily KMU Digest` 최근 실행이 성공인지 확인
+3. `Telegram Callback Processor` 최근 실행이 성공인지 확인
+
+## 보안 주의
+
+`SUPABASE_SERVICE_ROLE_KEY`는 서버 권한 키입니다. 노출되면 Supabase Dashboard에서 rotate한 뒤 아래 두 곳을 갱신하세요.
+
+- 로컬 `.env`
+- GitHub Repository Secrets

@@ -1,183 +1,162 @@
-# KMU 캠퍼스 라이프 에이전트 (커리어 추천 + 졸업 진단)
+# KMU 캠퍼스 라이프 에이전트
 
-> 🔰 **처음이세요?** → [`사용설명서.md`](사용설명서.md) 한 장으로 설치·키 발급·실행까지.
-> 셋업: `python setup_notion.py <노션페이지ID>` (캘린더 DB 자동 생성) → 웹 ⚙️설정에서 키 입력.
+국민대학교 AI빅데이터융합경영학과 학생을 기준으로 만든 맞춤형 캠퍼스·커리어 추천 웹앱입니다.  
+공지, 공모전, 대외활동, 장학금, 채용·인턴, 자격증, 학사일정을 매일 수집해 사용자의 포트폴리오, 시간표, 실제 일정, 졸업 상태를 바탕으로 추천합니다.
 
-## 현재 아키텍처 (노션 최소화 · v2)
-```
-노션      = 내 캘린더(회의·모임·회식 등 실제 일정) + 포트폴리오
-백엔드    = 기본 로컬 SQLite(data/agent.db) / 선택 Supabase 원격 DB  (modules/store.py)
-웹(Streamlit) = ⚙️설정(키·자동수신·시간표 PDF) · 📌내 맞춤 추천함 · 🎓졸업 진단(영속)
-자동수신  = 설정 주기에 맞는 분야만 새 공지 분석·추천함 업데이트, 끄기는 수동 새로고침에서도 제외
-```
-- API 키는 **웹 ⚙️설정** 또는 `.env`/GitHub Secrets에서 입력(개인별 비서)
-- 추천 상세(요약·근거·체크리스트·원문 링크)는 **웹/백엔드**와 **노션 캘린더 일정 본문**에 함께 기록
-- 수업 시간표는 노션에 넣지 않고 **웹에서 PDF 업로드 후 백엔드에 저장**해 가용시간 계산에 반영
-- Supabase를 설정하면 GitHub Actions 08시 갱신 결과를 로컬 웹에서도 같은 추천함으로 볼 수 있음
-- 국민대학교 공식 학사일정을 읽어 **시험기간/시험 직전에는 추천 가용시간을 크게 축소**
-- 아래 Phase 기록은 개발 변천사(일부는 v2에서 백엔드로 이전됨)
+현재 운영 구조는 **Supabase 원격 DB + Streamlit 웹 + GitHub Actions 자동화 + Notion 캘린더 + Telegram 승인**입니다.
 
-> 전체 구조 다이어그램: `통합_설계도.pdf`
+## 현재 상태
 
-국민대 AI빅데이터융합경영학과 학우 맞춤형 **Human-in-the-Loop 멀티 에이전트 커리어 비서**.
+- 로컬 웹: `streamlit run app.py` → <http://localhost:8501>
+- 저장소: 기본 SQLite 지원, 운영은 `STORE_BACKEND=supabase`
+- 원격 DB: Supabase `settings`, `profile`, `preferences`, `kv`, `recommendations`
+- 서버 자동화: GitHub Actions가 매일 08:00 KST 추천 갱신
+- 텔레그램 승인: GitHub Actions가 5분마다 승인 버튼 확인
+- Notion 사용 범위: 실제 일정 캘린더, 포트폴리오 페이지
+- 시간표: Notion에 넣지 않고 웹 설정 페이지에서 PDF/표로 저장
+- 졸업 진단: 성적증명서 PDF 분석 결과를 추천 프로필에 반영
 
-학사·공모전 공지를 자동 수집·분석해 내 전공/실력/일정에 맞는 활동만 골라
-텔레그램으로 추천하고, **내가 승인하면** Notion에 일정 블록 + 칸반 티켓을 자동 생성합니다.
+## 빠른 실행
 
-> 개인 실제 일정은 **Notion 캘린더**로, 수업 시간표는 **웹 PDF 업로드**로 분리했습니다.
-> 구글 캘린더 연동 없음 → OAuth 세팅 불필요.
-
-## 아키텍처 (역할별 에이전트)
-
-```
-목표 → [오케스트레이터 main.py]
-        │
-        ├─ [1] scraper      공지 수집 (봇 차단 회피 + 인메모리 즉시 파기)
-        ├─ [2] document_ai  첨부 PDF 평가기준/표 파싱 (BytesIO + pdfplumber)
-        ├─ [3] analyzer      LLM 맥락 분석 + 역량 가중치(0.7/1.5) + Critic 검증
-        ├─ [4] validator     Notion 일정 DB 읽기 + 30% 안전 버퍼 검증
-        └─ [5] executor      텔레그램 승인(HITL) → [6] Notion 일정+칸반 실행
-```
-
-## 핵심 설계 포인트
-
-| 기능 | 위치 | 의미 |
-|---|---|---|
-| 인메모리 파기 | scraper | HTML 디스크 미저장, RAM에서 추출 후 즉시 폐기 |
-| 역량 가중치 | analyzer | 숙련 분야 ×0.7, 생소 분야 ×1.5 동적 보정 |
-| Critic 검증 | analyzer | 점수 과대·환각 2차 차단 |
-| 30% 안전 버퍼 | validator | 공강의 70%만 사용, 일정 과부하 방지 |
-| Human-in-the-Loop | executor | 승인 없이는 어떤 액션도 실행하지 않음 |
-
-## 필요한 Notion DB 2개
-
-1. **일정 DB** (`NOTION_SCHEDULE_DB_ID`) — validator가 읽어 공강 계산
-   - 속성: `일정명`(title), `요일`(select: 월~일), `시작`(number 또는 "09:00"), `종료`(number 또는 "12:00")
-2. **칸반 DB** (`NOTION_KANBAN_DB_ID`) — executor가 승인 후 티켓/초안 생성
-   - 속성: `Name`(title), `Status`(select: To Do / In Progress / Done)
-
-## 빠른 실행 (데모 - 키 불필요)
-
-```bash
-python main.py                   # 가짜 데이터로 전체 파이프라인 시연
-DEMO_APPROVE=no python main.py   # 거절 시나리오
-```
-
-## 실제 운영 전환
-
-```bash
+```powershell
 pip install -r requirements.txt
-cp .env.example .env             # 키 입력 후 DEMO_MODE=false 로 변경
-python main.py
+copy .env.example .env
+streamlit run app.py
 ```
 
-필요한 키: LLM(Gemini 또는 OpenAI), Notion API + DB 2개, Telegram Bot Token.
+웹을 열면 다음 순서로 설정합니다.
 
-## 수집 소스 현황 (scraper.py)
+1. `설정`에서 OpenAI, Notion, Telegram 키 입력
+2. 시간표 PDF 업로드 또는 표 직접 입력
+3. 분야별 자동수신 주기 선택
+4. `내 맞춤 추천함`에서 새로고침으로 추천 분석
+5. 필요한 추천은 `노션에 추가`, 필요 없는 추천은 `무시`
+6. `졸업 진단`에서 성적증명서 PDF 업로드 후 결과 확인
 
-| 소스 | URL | 방식 | 상태 |
-|---|---|---|---|
-| 국민대 학사공지 | `www.kookmin.ac.kr/user/kmuNews/notice/index.do` | 서버렌더 (requests+bs4) | ✅ 연결됨 (목록+본문+PDF첨부) |
-| 국민대 경영대학 공지 | `biz.kookmin.ac.kr/community/notice/` | 서버렌더 (requests+bs4) | ✅ 연결됨 (목록+본문+PDF첨부) |
-| 국민대 전체 장학공지 | `www.kookmin.ac.kr/user/kmuNews/notice/7/index.do` | 서버렌더 (requests+bs4) | ✅ 연결됨 (목록+본문+PDF첨부) |
-| 국민대 경영대학 장학공지 | `biz.kookmin.ac.kr/community/kookmin/scholarship/` | 서버렌더 (requests+bs4) | ✅ 연결됨 (목록+본문/PDF첨부 시도) |
-| 국민대 SW 취업공지 | `cs.kookmin.ac.kr/news/jobs/` | 서버렌더 (requests+bs4) | ✅ 연결됨 (AI/데이터/경영 키워드 필터) |
-| 링커리어 공모전 | `api.linkareer.com/graphql` (activityTypeID 3) | GraphQL API | ✅ 연결됨 (AI/데이터/경영 키워드 필터) |
-| 링커리어 대외활동 | `api.linkareer.com/graphql` (activityTypeID 1) | GraphQL API | ✅ 연결됨 (AI/데이터/경영 키워드 필터) |
-| 링커리어 채용·인턴 | `api.linkareer.com/graphql` (activityTypeID 5) | GraphQL API | ✅ 연결됨 (인턴·현장실습·AI/데이터 중심) |
-| 링커리어 교육·자격증 | `api.linkareer.com/graphql` (activityTypeID 6) | GraphQL API | ✅ 연결됨 (SQLD/ADsP/부트캠프 등 중심) |
-| 학과 인스타그램 | `instagram.com/kmuabm_official` | 로그인벽 + 안티봇 | ❌ 스크래핑 비권장 (대안 필요) |
+## 운영 자동화
 
-> 링커리어는 `status:OPEN`(모집중)을 최신순으로 조회. `LINKAREER_PAGE_SIZE`(기본 24)로 소스당 건수 조절.
-> 시연 기본값은 `SOURCE_FOCUS_FILTER=true` 이며, AI빅데이터융합경영학과 학생에게 맞는 키워드만 후보로 남긴다.
+GitHub Actions는 로컬 PC가 꺼져 있어도 실행됩니다.
 
-- `TARGET_SOURCES` 에 `{name,url,base,parser}` 만 추가하면 소스 확장 가능.
-- `MAX_DETAIL_PER_SOURCE`(기본 8) 로 상세페이지 진입 수 제한.
-- 첨부는 현재 **.pdf 만** 파싱. 국내 공지에 흔한 **.hwp 는 별도 파서 필요**(미구현).
+| 자동화 | 파일 | 주기 | 역할 |
+|---|---|---:|---|
+| Daily KMU Digest | `.github/workflows/daily-digest.yml` | 매일 08:00 KST | 정보 수집, 추천 분석, Supabase 업데이트, 텔레그램 발송 |
+| Telegram Callback Processor | `.github/workflows/telegram-callbacks.yml` | 5분마다 | 텔레그램 승인/무시 버튼 확인, Notion 캘린더 반영 |
 
-## Phase 1 (구현 완료) — 분류 · 신규필터 · 프로필 동기화
+필수 GitHub Secrets:
 
-| 에이전트 | 파일 | 역할 |
+- `OPENAI_API_KEY`
+- `NOTION_API_KEY`
+- `NOTION_CALENDAR_DB_ID`
+- `NOTION_PORTFOLIO_PAGE_ID`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_CHAT_ID`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+서버에서 매일 분석할 분야와 텔레그램으로 보낼 분야는 GitHub Variables로 조정할 수 있습니다.
+
+- `DIGEST_CATEGORIES`: 웹 추천함을 갱신할 분야
+- `TELEGRAM_CATEGORIES`: 텔레그램으로 보낼 분야
+
+기본값은 모든 분야를 매일 분석하고, 텔레그램은 `공모전·대회`, `학사일정`을 발송합니다.
+
+## 데이터 흐름
+
+```text
+웹 공지/링커리어/국민대 공지
+→ scraper.py 수집
+→ classifier.py 분야 분류
+→ analyzer.py LLM 분석/요약/점수화
+→ validator.py 시간표·실제일정·학사일정 기반 가용시간 검증
+→ store.py Supabase recommendations 저장
+→ Streamlit 추천함 표시
+→ Telegram 1순위 발송
+→ 승인 시 executor.py가 Notion 캘린더에 등록
+```
+
+## 주요 화면
+
+| 화면 | 파일 | 사용자가 하는 일 |
 |---|---|---|
-| Classifier | `modules/classifier.py` | 7종 분류(장학금·공모전·대회·대외활동·서포터즈·학사일정·채용·인턴·자격증·기타). 제목+게시판분류 규칙 우선, 애매하면 LLM |
-| History Store | `modules/history.py` | 노션 '커리어 추천 이력' DB. URL로 신규 판별 → **중복 추천 방지**, 처리 이력·승인/거절 기록 |
-| Profile Sync | `modules/profile.py` | 노션 '내 프로필' DB(항목/값)를 읽어 분석용 프로필 생성. 노션에서 고치면 다음 실행부터 반영 |
+| 홈 | `app.py` | 프로필 요약, 추천함/졸업 진단 진입 |
+| 설정 | `pages/0_설정.py` | API 키, 시간표, 분야별 자동수신 설정 |
+| 내 맞춤 추천함 | `pages/1_내_맞춤_추천함.py` | 추천 누적 확인, 새로고침, 노션 추가, 무시 |
+| 졸업 진단 | `pages/2_졸업_진단.py` | 성적증명서 PDF 분석, 부족 학점 확인 |
 
-추가 `.env` 키: `NOTION_HISTORY_DB_ID`, `NOTION_PROFILE_DB_ID`
-실행 옵션: `PIPELINE_DRY_RUN=true` (승인/실행 생략, 분류·랭킹·이력 기록까지만 — 테스트/스케줄 점검용)
+## 핵심 모듈
 
-## Phase 2 (구현 완료) — 수신주기 · 추천서 · 스케줄러
+| 모듈 | 역할 |
+|---|---|
+| `main.py` | 추천 파이프라인 오케스트레이션 |
+| `scheduler.py` | 로컬 PC에서 자동 갱신/텔레그램 발송을 돌릴 때 사용 |
+| `modules/store.py` | SQLite/Supabase 공통 저장소 API |
+| `modules/scraper.py` | 국민대/링커리어 등 정보 수집 |
+| `modules/analyzer.py` | LLM 기반 적합도 분석, 요약 생성 |
+| `modules/validator.py` | 실제 일정, 시간표, 시험기간 기반 가용시간 검증 |
+| `modules/digest.py` | 분야별 주기 설정에 맞춰 추천 갱신/발송 |
+| `modules/telegram_callbacks.py` | 텔레그램 승인 버튼 처리 |
+| `modules/executor.py` | Notion 캘린더 일정 생성 |
+| `modules/timetable.py` | 시간표 PDF/표 저장 및 주간 수업시간 계산 |
+| `modules/academic_calendar.py` | 국민대 학사일정/시험기간 반영 |
 
-| 에이전트 | 파일 | 역할 |
-|---|---|---|
-| Preferences | `modules/preferences.py` | 로컬 설정 DB(분야/주기/채널). 매일·매주 → 자동 업데이트, 수동 → 직접 새로고침, 끄기 → 자동/수동 모두 제외 |
-| Digest | `modules/digest.py` | 오늘 주기에 해당하는 분야만 분석·저장하고, 텔레그램 수신 분야의 1순위 추천을 발송 |
-| Scheduler | `scheduler.py` | 매일 정해진 시각에 digest 자동 실행 (APScheduler). Windows 작업 스케줄러로도 가능 |
+## 수집 소스
 
-실행 모드(`.env DELIVERY_MODE`): `approval`(단건 승인·기본) / `digest`(분야별 추천서)
-추가 `.env` 키: `NOTION_PREFS_DB_ID`, `DIGEST_WEEKLY_DAY`(매주 발송 요일), `DIGEST_HOUR`/`DIGEST_MINUTE`
-자동 발송: `python scheduler.py` (즉시 1회 테스트: `RUN_NOW=true python scheduler.py`)
+| 분야 | 주요 소스 |
+|---|---|
+| 장학금 | 국민대 전체 장학공지, 경영대학 장학공지 |
+| 공모전·대회 | 링커리어 공모전, 국민대/경영대학 공지 |
+| 대외활동·서포터즈 | 링커리어 대외활동 |
+| 학사일정 | 국민대 학사공지, 학사일정성 공지 |
+| 채용·인턴 | 링커리어 채용·인턴, 국민대 SW 취업공지 |
+| 자격증 | 링커리어 교육·자격증 |
+| 기타 | 위 분야로 분류되지 않은 보조 공지 |
 
-## Phase 3 (구현 완료) — 웹 리뷰 UI
+시연 기본값은 `SOURCE_FOCUS_FILTER=true`이며, AI/데이터/경영/인턴/분석 키워드 중심으로 후보를 좁힙니다.
 
-| 구성 | 파일 | 역할 |
-|---|---|---|
-| 웹 리뷰 UI | `app.py` (Streamlit) | 이력 DB의 '추천완료' 항목을 분야별로 표시 → 항목별 [노션에 추가]/[무시] |
-| 검토목록 조회 | `modules/history.py` `list_pending()` | 상태=추천완료 행을 적합도순으로 반환 |
+## 추천 기준
 
-실행: `streamlit run app.py` → http://localhost:8501
-- [✅ 노션에 추가] → executor가 캘린더(날짜) + 칸반 상세티켓 생성, 이력 상태 '승인'
-- [🗑️ 무시] → 이력 상태 '거절'
-- 데이터 공급: `python main.py`(approval) 또는 `scheduler.py`(digest)가 '추천완료' 행을 쌓음
+- 포트폴리오 기반 관심 직무와 강점
+- 시간표 PDF에서 추출한 고정 수업 시간
+- Notion 캘린더의 실제 일정
+- 국민대 학사일정과 시험기간
+- 성적증명서 업로드 시 졸업 미충족 요건
+- 마감일, 예상 필요 시간, 활동 분야 적합도
+- 사용자가 과거에 승인/무시한 피드백
 
-## 프로필 소스 전환 — 포트폴리오 분석 (LLM)
+시험기간에는 가용시간을 크게 줄여 무리한 추천을 보류합니다. 단, 분야별 최상위 후보는 `시험기간 주의`로 표시해 시연 화면이 비지 않도록 했습니다. 학사일정은 점수 순위보다 일정성 공지 자체를 보여주는 방식입니다.
 
-수동 입력 대신 **노션 포트폴리오를 LLM으로 분석**해 프로필을 자동 생성한다.
+## 추천 상태
 
-| 구성 | 파일 | 역할 |
-|---|---|---|
-| Portfolio Analyzer | `modules/portfolio.py` | 포트폴리오 페이지+Featured Projects DB 읽기 → LLM으로 강점·관심사·희망직무·프로젝트 추출 → '내 프로필' DB 동기화 |
-| 실행 | `analyze_portfolio.py` | `python analyze_portfolio.py` (포트폴리오 수정/교체 시 재실행) |
+| 상태 | 의미 |
+|---|---|
+| `추천완료` | 웹 추천함에 표시되는 후보 |
+| `승인` | 사용자가 노션에 추가한 후보 |
+| `거절` | 사용자가 무시한 후보 |
+| `보류/제외` | 시간, 마감, 관련도 조건을 통과하지 못한 후보 |
 
-- `.env`: `NOTION_PORTFOLIO_PAGE_ID`
-- 포트폴리오로 알 수 없는 항목(미충족졸업요건·주간가용시간)은 건드리지 않음 → 그대로 직접 관리
-- **범용성**: 포트폴리오만 바꿔 끼우고 재실행하면 다른 사람에게도 그대로 적용
-- 다운스트림은 변경 없음(기존 `profile.load_profile()`이 갱신된 DB를 읽음)
+새로고침은 기존 추천을 초기화하지 않고 새 후보를 분석해 누적 저장합니다. 같은 URL은 중복 저장하지 않고 상태와 상세 정보만 갱신합니다.
 
-## Phase 4 (구현 완료) — 마감관리 · LLM 검증관 · 피드백 학습
+## 처음 보는 사람을 위한 자료
 
-| 에이전트 | 파일 | 역할 |
-|---|---|---|
-| Deadline Guard | `modules/deadline.py` | 마감 지난 공고 제외, 임박(D-3 +10 / D-7 +5) 우선순위 가점. 제목 `~M/D`·링커리어 마감일만 인정(게시일과 구분) |
-| Critic (LLM) | `modules/analyzer.py` `llm_critic()` | 후보에만 LLM 2차 검증 — 프로필 부합/과대평가 여부 판단해 반려 가능 (비용 절약 위해 검증 통과분만) |
-| Feedback | `modules/feedback.py` | 이력 DB 승인/거절을 분야별 집계 → 다음 추천 점수 ±15 보정(개인화 루프) |
+- 실행 가이드: [`사용설명서.md`](사용설명서.md)
+- 서버 자동화: [`docs/server_automation.md`](docs/server_automation.md)
+- Supabase 스키마: [`docs/supabase_schema.sql`](docs/supabase_schema.sql)
+- 웹 사용 설계도 PDF: [`웹_사용_설계도.pdf`](웹_사용_설계도.pdf)
 
-랭킹 점수 = 적합도 + 마감임박 가점 + 피드백 보정. `_print_ranking`에 `70→80(학습+10)` 형태로 표시.
+## 클로드에게 이어서 맡길 때
 
-## 전체 에이전트 (Phase 0~4 완료)
+현재 구현의 기준 파일은 아래입니다.
 
-수집(Scraper) · 분류(Classifier) · 이력/중복(History) · 프로필(Profile←Portfolio Analyzer) ·
-문서분석(Document AI) · 맥락분석(Analyzer) · 검증(Critic 규칙+LLM) · 마감(Deadline) ·
-일정검증(Validator) · 피드백(Feedback) · 설정(Preferences) · 추천서(Digest) ·
-전달(Telegram/웹 Streamlit) · 실행(Executor) · 스케줄러
+- 추천 화면 개선: `pages/1_내_맞춤_추천함.py`
+- 추천 분석 품질: `modules/analyzer.py`, `modules/scraper.py`
+- 자동 갱신/발송: `modules/digest.py`, `main.py`, `.github/workflows/daily-digest.yml`
+- 텔레그램 승인 처리: `modules/telegram_callbacks.py`, `.github/workflows/telegram-callbacks.yml`
+- 원격 DB: `modules/store.py`, `docs/supabase_schema.sql`
+- 시간표/가용시간: `modules/timetable.py`, `modules/validator.py`, `modules/academic_calendar.py`
 
-## 졸업도우미 통합 (추천 + 졸업)
+주의할 점:
 
-성적증명서 기반 졸업 진단을 붙이고, 두 시스템을 하나의 웹으로 통합.
-
-| 구성 | 파일 | 역할 |
-|---|---|---|
-| 성적증명서 추출 | `modules/transcript.py` | 이미지형 PDF → pypdfium2 렌더 → OpenAI 비전. 총학점·GPA·이수구분별 추출 (촘촘한 표는 비전이 불안정 → 웹에서 사람 검증) |
-| 졸업 진단 | `modules/graduation.py` | 이수구분별(성적) vs 기준학점(졸업요건 DB) → 구분별 부족·위험도. 미충족요건을 '내 프로필' 미충족졸업요건에 반영 → 추천이 계절학기·전공 우선 |
-| 통합 웹 | `app.py` + `pages/` | Streamlit 멀티페이지: 홈 / ①내 맞춤 추천함 / ②졸업 진단(성적증명서 업로드) |
-
-추가 노션 DB: 내 캘린더(시간표→가용시간), 졸업요건(기준학점), 이수내역
-추가 `.env`: `NOTION_CALENDAR_DB_ID`, `NOTION_GRAD_REQ_DB_ID`, `NOTION_GRAD_HISTORY_DB_ID`
-실행: `streamlit run app.py`
-
-> ⚠️ 졸업요건 기준학점은 **예시값** — 노션 '졸업요건' DB에 실제 핸드북 값을 넣어야 정확.
-> 성적증명서의 이수구분별 학점은 **업로드 후 화면에서 확인·수정**(사람 검증) 단계를 거침.
-
-## 다음 후보 (선택)
-
-- 졸업 로드맵(LLM 학기별 수강 추천) · 마감 임박 리마인더 · 멀티 사용자(포트폴리오별)
+- `.env`와 `data/`는 커밋하지 않습니다.
+- 운영 자동화는 Supabase를 기준으로 동작하므로 GitHub Actions에서 `STORE_BACKEND=supabase`가 필요합니다.
+- Notion은 캘린더와 포트폴리오만 사용합니다. 추천 이력/설정/졸업 데이터는 Supabase 또는 SQLite에 있습니다.
+- 텔레그램 발송은 설정된 분야의 1순위 추천 중심입니다. 정보성 분야는 여러 건이 같이 갈 수 있습니다.

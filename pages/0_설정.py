@@ -132,5 +132,6 @@ with st.form("prefs"):
         st.success("수신 설정 저장 완료")
 
 st.divider()
-st.caption("💡 자동 업데이트/텔레그램 발송은 `python scheduler.py` 프로세스가 실행 중일 때 정해진 시각에 동작합니다. "
+st.caption("💡 서버 운영은 GitHub Actions가 매일 08시에 실행하고, 로컬 테스트는 `python scheduler.py`로 돌릴 수 있습니다. "
+           "Supabase 원격 DB를 쓰면 PC가 꺼져 있어도 서버가 추천함을 갱신합니다. "
            "`수동`은 자동 업데이트에서 제외되지만 새로고침으로 직접 재분석할 수 있고, `끄기`는 새로고침에서도 제외됩니다.")

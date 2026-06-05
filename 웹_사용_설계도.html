@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>KMU 캠퍼스 라이프 에이전트 웹 사용 설계도</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      color: #172033;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+      line-height: 1.55;
+      background: #ffffff;
+    }
+    h1, h2, h3, p {
+      margin: 0;
+    }
+    h1 {
+      font-size: 30px;
+      letter-spacing: 0;
+      line-height: 1.25;
+    }
+    h2 {
+      margin: 34px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #d9e1ee;
+      font-size: 20px;
+    }
+    h3 {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+    p {
+      font-size: 12px;
+    }
+    .cover {
+      padding: 26px;
+      border: 2px solid #1d3d72;
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+    .subtitle {
+      margin-top: 12px;
+      color: #46556f;
+      font-size: 14px;
+    }
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .badge {
+      padding: 6px 10px;
+      border: 1px solid #cdd8e8;
+      border-radius: 999px;
+      background: #ffffff;
+      font-size: 11px;
+      color: #22365a;
+    }
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+    .grid.two {
+      grid-template-columns: 1fr 1fr;
+    }
+    .grid.three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .card {
+      border: 1px solid #d7dfeb;
+      border-radius: 8px;
+      padding: 14px;
+      background: #ffffff;
+    }
+    .card strong {
+      color: #102b57;
+    }
+    .muted {
+      color: #65748c;
+      font-size: 11px;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .step {
+      position: relative;
+      min-height: 96px;
+      padding: 12px 10px;
+      border: 1px solid #cbd7e8;
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+    .step .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      margin-bottom: 8px;
+      border-radius: 50%;
+      background: #1d3d72;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .step .title {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #102b57;
+    }
+    .step p {
+      font-size: 10.5px;
+      color: #4e5e76;
+    }
+    .screen {
+      min-height: 138px;
+      border: 1px solid #cbd7e8;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    .screen-head {
+      padding: 8px 10px;
+      background: #1d3d72;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .screen-body {
+      padding: 12px;
+    }
+    .screen-body ul,
+    .plain-list {
+      margin: 0;
+      padding-left: 16px;
+      font-size: 11px;
+    }
+    .screen-body li,
+    .plain-list li {
+      margin-bottom: 4px;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .table th {
+      background: #edf3fb;
+      color: #102b57;
+      text-align: left;
+    }
+    .table th,
+    .table td {
+      padding: 8px;
+      border: 1px solid #d6dfec;
+      vertical-align: top;
+    }
+    .note {
+      margin-top: 10px;
+      padding: 11px 12px;
+      border-left: 4px solid #1d3d72;
+      background: #f4f8fd;
+      font-size: 11px;
+      color: #394964;
+    }
+    .timeline {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px 14px;
+      font-size: 11px;
+    }
+    .time {
+      padding: 7px 9px;
+      border-radius: 6px;
+      background: #edf3fb;
+      color: #102b57;
+      font-weight: 700;
+    }
+    .desc {
+      padding: 7px 0;
+    }
+    .page-break {
+      break-before: page;
+    }
+    .footer {
+      margin-top: 26px;
+      padding-top: 10px;
+      border-top: 1px solid #d9e1ee;
+      color: #65748c;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <h1>KMU 캠퍼스 라이프 에이전트<br>웹 사용 설계도</h1>
+    <p class="subtitle">
+      처음 보는 사용자가 설정, 추천 확인, 텔레그램 승인, Notion 추가, 졸업 진단까지 이해하도록 만든 운영 흐름 문서입니다.
+    </p>
+    <div class="badge-row">
+      <span class="badge">Streamlit 웹</span>
+      <span class="badge">Supabase 원격 DB</span>
+      <span class="badge">GitHub Actions 08시 자동화</span>
+      <span class="badge">Telegram 승인</span>
+      <span class="badge">Notion 캘린더</span>
+    </div>
+  </section>
+
+  <h2>1. 한눈에 보는 서비스 구조</h2>
+  <div class="grid three">
+    <div class="card">
+      <h3>사용자가 보는 곳</h3>
+      <p><strong>웹:</strong> 설정, 추천함, 졸업 진단을 사용합니다.</p>
+      <p><strong>텔레그램:</strong> 추천을 받고 버튼으로 승인합니다.</p>
+      <p><strong>Notion:</strong> 승인된 일정과 실제 개인 일정을 봅니다.</p>
+    </div>
+    <div class="card">
+      <h3>데이터가 저장되는 곳</h3>
+      <p><strong>Supabase:</strong> 추천, 설정, 프로필, 시간표, 졸업 데이터를 저장합니다.</p>
+      <p><strong>Notion:</strong> 실제 일정 캘린더와 포트폴리오만 저장합니다.</p>
+    </div>
+    <div class="card">
+      <h3>자동으로 도는 곳</h3>
+      <p><strong>GitHub Actions:</strong> PC가 꺼져 있어도 매일 08시에 추천을 업데이트합니다.</p>
+      <p><strong>Callback Processor:</strong> 5분마다 텔레그램 버튼을 확인합니다.</p>
+    </div>
+  </div>
+
+  <h2>2. 첫 사용 흐름</h2>
+  <div class="flow">
+    <div class="step">
+      <span class="num">1</span>
+      <span class="title">웹 실행</span>
+      <p>터미널에서 streamlit run app.py 실행 후 localhost:8501 접속</p>
+    </div>
+    <div class="step">
+      <span class="num">2</span>
+      <span class="title">키 입력</span>
+      <p>설정 화면에서 OpenAI, Notion, Telegram 정보를 저장</p>
+    </div>
+    <div class="step">
+      <span class="num">3</span>
+      <span class="title">시간표 저장</span>
+      <p>시간표 PDF를 업로드하거나 표를 직접 입력해 수업 시간을 분리</p>
+    </div>
+    <div class="step">
+      <span class="num">4</span>
+      <span class="title">추천 새로고침</span>
+      <p>분야별 공지를 수집하고 내 상황에 맞는 후보를 추천함에 저장</p>
+    </div>
+    <div class="step">
+      <span class="num">5</span>
+      <span class="title">선택 실행</span>
+      <p>필요한 추천은 Notion에 추가하고, 필요 없는 추천은 무시</p>
+    </div>
+  </div>
+
+  <h2>3. 웹 화면별 역할</h2>
+  <div class="grid two">
+    <div class="screen">
+      <div class="screen-head">홈</div>
+      <div class="screen-body">
+        <ul>
+          <li>현재 프로필 요약을 보여줍니다.</li>
+          <li>내 맞춤 추천함과 졸업 진단으로 이동합니다.</li>
+          <li>하단에서 현재 저장소가 Supabase인지 확인할 수 있습니다.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="screen">
+      <div class="screen-head">설정</div>
+      <div class="screen-body">
+        <ul>
+          <li>API 키와 DB ID를 입력합니다.</li>
+          <li>시간표 PDF를 업로드하고 추출 결과를 수정합니다.</li>
+          <li>분야별 자동수신 주기와 채널을 정합니다.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="screen">
+      <div class="screen-head">내 맞춤 추천함</div>
+      <div class="screen-body">
+        <ul>
+          <li>분야 박스를 눌러 누적 추천을 확인합니다.</li>
+          <li>추천된 날짜, 요약, 이유, 마감일, 원문 링크를 봅니다.</li>
+          <li>노션에 추가하거나 무시합니다.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="screen">
+      <div class="screen-head">졸업 진단</div>
+      <div class="screen-body">
+        <ul>
+          <li>성적증명서 PDF를 업로드합니다.</li>
+          <li>AI가 추출한 학점을 검토하고 수정합니다.</li>
+          <li>부족 학점과 졸업 위험 요소가 추천 기준에 반영됩니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-break">4. 추천이 만들어지는 과정</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>단계</th>
+        <th>무엇을 하나요?</th>
+        <th>관련 파일</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>수집</td>
+        <td>국민대 공지, 장학공지, 링커리어 공모전/대외활동/채용/자격증 정보를 가져옵니다.</td>
+        <td>modules/scraper.py</td>
+      </tr>
+      <tr>
+        <td>분류</td>
+        <td>장학금, 공모전·대회, 대외활동·서포터즈, 학사일정, 채용·인턴, 자격증, 기타로 나눕니다.</td>
+        <td>modules/classifier.py</td>
+      </tr>
+      <tr>
+        <td>분석</td>
+        <td>LLM이 내용을 읽고 요약, 추천 이유, 예상 시간, 적합도 점수를 만듭니다.</td>
+        <td>modules/analyzer.py</td>
+      </tr>
+      <tr>
+        <td>검증</td>
+        <td>시간표, Notion 실제 일정, 시험기간을 반영해 무리한 추천을 보류합니다.</td>
+        <td>modules/validator.py</td>
+      </tr>
+      <tr>
+        <td>저장</td>
+        <td>추천완료, 승인, 거절, 보류/제외 상태를 Supabase에 저장합니다.</td>
+        <td>modules/store.py</td>
+      </tr>
+      <tr>
+        <td>실행</td>
+        <td>사용자가 승인하면 Notion 캘린더에 준비 일정과 상세 설명을 추가합니다.</td>
+        <td>modules/executor.py</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. 자동화 타임라인</h2>
+  <div class="timeline">
+    <div class="time">매일 08:00</div>
+    <div class="desc">GitHub Actions가 추천 파이프라인을 실행합니다. PC가 꺼져 있어도 동작합니다.</div>
+    <div class="time">분석 직후</div>
+    <div class="desc">추천 결과가 Supabase 원격 DB에 저장됩니다. 텔레그램 수신 분야는 메시지로 발송됩니다.</div>
+    <div class="time">버튼 클릭</div>
+    <div class="desc">사용자가 텔레그램에서 노션 추가 또는 무시를 선택합니다.</div>
+    <div class="time">최대 5분 내</div>
+    <div class="desc">Callback Processor가 버튼을 확인하고, 승인된 추천을 Notion 캘린더에 등록합니다.</div>
+    <div class="time">PC 켠 뒤</div>
+    <div class="desc">로컬 웹을 열면 Supabase에 저장된 최신 추천을 읽어옵니다.</div>
+  </div>
+
+  <h2>6. 추천 카드에서 봐야 할 것</h2>
+  <div class="grid two">
+    <div class="card">
+      <h3>참여 여부 판단 기준</h3>
+      <ul class="plain-list">
+        <li>내 전공/희망직무와 관련 있는가?</li>
+        <li>마감일까지 준비할 시간이 충분한가?</li>
+        <li>시험기간이나 바쁜 일정과 겹치지 않는가?</li>
+        <li>포트폴리오에 실제로 도움이 되는 산출물이 남는가?</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>상태의 의미</h3>
+      <ul class="plain-list">
+        <li><strong>추천완료:</strong> 추천함에 표시되는 후보</li>
+        <li><strong>승인:</strong> Notion에 추가한 후보</li>
+        <li><strong>거절:</strong> 사용자가 무시한 후보</li>
+        <li><strong>보류/제외:</strong> 시간, 마감, 관련도 조건에서 제외된 후보</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">
+    새로고침은 기존 추천을 지우지 않습니다. 새 후보를 추가하거나 같은 URL의 정보를 갱신합니다.
+    설정에서 끄기로 둔 분야는 자동 실행과 수동 새로고침 모두에서 제외됩니다.
+  </div>
+
+  <h2>7. 처음 운영할 때 체크리스트</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>확인</th>
+        <th>해야 할 일</th>
+        <th>정상 기준</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Supabase</td>
+        <td>SQL Editor에서 docs/supabase_schema.sql 실행</td>
+        <td>recommendations 등 5개 테이블 생성</td>
+      </tr>
+      <tr>
+        <td>로컬 환경</td>
+        <td>.env에 STORE_BACKEND=supabase와 Supabase 키 입력</td>
+        <td>store.active_backend() 결과가 supabase</td>
+      </tr>
+      <tr>
+        <td>GitHub Secrets</td>
+        <td>OpenAI, Notion, Telegram, Supabase Secrets 등록</td>
+        <td>Actions 실행이 실패 없이 완료</td>
+      </tr>
+      <tr>
+        <td>Notion</td>
+        <td>캘린더 DB와 포트폴리오 페이지에 통합 연결</td>
+        <td>노션에 추가 버튼이 일정 생성</td>
+      </tr>
+      <tr>
+        <td>웹</td>
+        <td>streamlit run app.py 실행</td>
+        <td>localhost:8501 접속 가능</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>8. 장애가 생겼을 때 빠른 판단</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>증상</th>
+        <th>가장 먼저 볼 곳</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>추천이 안 쌓임</td>
+        <td>GitHub Actions Daily KMU Digest 로그, DIGEST_CATEGORIES, 분야별 주기</td>
+      </tr>
+      <tr>
+        <td>텔레그램이 안 옴</td>
+        <td>TELEGRAM_CATEGORIES, Telegram Secrets, Actions 실행 결과</td>
+      </tr>
+      <tr>
+        <td>승인했는데 Notion에 안 들어감</td>
+        <td>Telegram Callback Processor 로그, Notion 캘린더 DB 연결</td>
+      </tr>
+      <tr>
+        <td>웹에는 예전 데이터만 보임</td>
+        <td>STORE_BACKEND, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 웹 재시작 여부</td>
+      </tr>
+      <tr>
+        <td>추천이 너무 적음</td>
+        <td>시험기간 가용시간, SOURCE_FOCUS_FILTER, 끄기 설정, 마감 지난 공고 여부</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    기준 파일: app.py, pages/0_설정.py, pages/1_내_맞춤_추천함.py, pages/2_졸업_진단.py,
+    modules/store.py, modules/digest.py, modules/telegram_callbacks.py, .github/workflows.
+  </div>
+</body>
+</html>
