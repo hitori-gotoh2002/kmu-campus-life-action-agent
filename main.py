@@ -145,6 +145,7 @@ def _gather_candidates(
 
     banner("[1.5~4] 분류 → 마감/신규필터 → 분석 → Critic(규칙+LLM) → 일정검증")
     candidates, skipped, expired = [], 0, 0
+    existing_by_url = history.index_by_url() if history.enabled() else {}
     warning_holds: dict[str, dict] = {}
     for i, n in enumerate(notices, 1):
         n.category = classifier.classify(n)                       # [1.5] 분류
@@ -155,20 +156,29 @@ def _gather_candidates(
             skipped += 1
             continue
 
+        prior_row = existing_by_url.get(n.url)
+        prior_status = prior_row.get("status") if prior_row else None
+        if history.enabled() and prior_status in history.PROTECTED_STATUSES:
+            print(f"   → 이미 {prior_status}한 공지, 스킵")
+            skipped += 1
+            continue
+
         if deadline.is_expired(n):                                # 마감 가드
             print("   → 마감 지남, 제외")
             expired += 1
             history.record(n, status="만료", category=n.category)
             continue
-        prior_status = history.status(n.url) if history.enabled() else None
-        if force_reanalysis and prior_status in {"승인", "거절"}:
-            print(f"   → 이미 {prior_status}한 공지, 스킵")
-            skipped += 1
-            continue
-        if history.enabled() and not force_reanalysis and not history.is_new(n):  # 신규 필터
-            print("   → 이미 처리한 공지, 스킵")
-            skipped += 1
-            continue
+
+        if history.enabled() and not force_reanalysis:
+            should_analyze, reason = history.needs_analysis(n, prior_row)
+            if not should_analyze:
+                print(f"   → {reason}, 스킵")
+                skipped += 1
+                continue
+            print(f"   → {reason}, 분석 진행")
+
+        if history.enabled() and force_reanalysis and prior_row:
+            print("   → 전체 재분석 모드: 기존 분석을 새 기준으로 갱신")
 
         if _is_official_academic_notice(n):
             result = _academic_info_analysis(n)
@@ -244,8 +254,8 @@ def _gather_candidates(
     return candidates
 
 
-def refresh_recommendations(force_reanalysis: bool = True) -> list:
-    """웹 새로고침용: '끄기'를 제외한 분야를 최신 저장 데이터 기준으로 다시 분석."""
+def refresh_recommendations(force_reanalysis: bool = False) -> list:
+    """웹 새로고침용: '끄기' 제외 분야에서 신규/변경 공지만 증분 분석."""
     mode = "DEMO" if os.getenv("DEMO_MODE", "true").lower() == "true" else "LIVE"
     banner(f"KMU Career Agent  [{mode} · web refresh]")
     ctx = profile.load_profile()
@@ -254,6 +264,8 @@ def refresh_recommendations(force_reanalysis: bool = True) -> list:
     if not allowed:
         print("추천 주기가 '끄기'가 아닌 분야가 없습니다. 재분석을 종료합니다.")
         return []
+    mode_label = "전체 재분석" if force_reanalysis else "증분 분석(신규/변경 공지만)"
+    print(f"수동 새로고침 분석 방식: {mode_label}")
     print("수동 새로고침 분석 분야: " + ", ".join(sorted(allowed)))
     candidates = _gather_candidates(ctx, force_reanalysis=force_reanalysis, allowed_categories=allowed)
     banner("웹 추천 새로고침 완료")

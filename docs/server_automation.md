@@ -77,6 +77,8 @@ python scripts\migrate_sqlite_to_supabase.py --include-settings
 - `수동`: 자동 분석 제외, 웹 새로고침 때만 분석
 - `끄기`: 자동 분석과 웹 새로고침 모두 제외
 
+자동 분석과 웹 새로고침은 기존 추천을 지우지 않고, 같은 URL의 제목·본문·마감일·분야가 바뀐 경우와 신규 공지만 LLM 분석합니다.
+
 GitHub Variables는 서버에서 임시로 강제하고 싶을 때만 사용합니다.
 
 | Variable | 의미 |

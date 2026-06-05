@@ -9,6 +9,9 @@ import os
 from modules import store
 
 
+PROTECTED_STATUSES = {"승인", "거절"}
+
+
 def enabled() -> bool:
     """데모가 아니면 항상 사용(로컬 저장소)."""
     return os.getenv("DEMO_MODE", "true").lower() != "true"
@@ -31,6 +34,54 @@ def is_new(notice) -> bool:
     if not enabled():
         return True
     return not store.rec_exists(notice.url)
+
+
+def index_by_url() -> dict[str, dict]:
+    """현재 추천 이력을 URL 기준으로 한 번에 읽어 증분 분석에 사용."""
+    if not enabled():
+        return {}
+    return {row["url"]: row for row in store.list_recs() if row.get("url")}
+
+
+def _norm_text(value: str | None, limit: int | None = None) -> str:
+    text = " ".join((value or "").split())
+    return text[:limit] if limit else text
+
+
+def needs_analysis(notice, existing: dict | None) -> tuple[bool, str]:
+    """신규/변경분만 분석하기 위한 비교.
+
+    같은 URL이어도 제목, 본문, 마감일, 분야가 바뀌었거나 과거 분석 결과가 비어 있으면
+    다시 분석한다. 승인/거절한 항목은 사용자의 명시적 피드백이므로 다시 살리지 않는다.
+    """
+    if not enabled() or not existing:
+        return True, "신규 공지"
+
+    status = existing.get("status")
+    if status in PROTECTED_STATUSES:
+        return False, f"이미 {status}한 공지"
+
+    title_changed = _norm_text(existing.get("title"), 300) != _norm_text(getattr(notice, "title", ""), 300)
+    body_changed = _norm_text(existing.get("body"), 5000) != _norm_text(getattr(notice, "body", ""), 5000)
+    deadline_changed = _norm_date(existing.get("deadline", "")) != _norm_date(getattr(notice, "date", ""))
+    category_changed = (existing.get("category") or "기타") != (getattr(notice, "category", "") or "기타")
+    missing_analysis = not any(existing.get(k) for k in ("summary", "reason", "score", "hours", "domain"))
+
+    changes = []
+    if title_changed:
+        changes.append("제목")
+    if body_changed:
+        changes.append("본문")
+    if deadline_changed:
+        changes.append("마감일")
+    if category_changed:
+        changes.append("분야")
+    if missing_analysis:
+        changes.append("분석결과 없음")
+
+    if changes:
+        return True, "변경 감지: " + ", ".join(changes)
+    return False, "기존 분석 유지"
 
 
 def status(url: str) -> str | None:

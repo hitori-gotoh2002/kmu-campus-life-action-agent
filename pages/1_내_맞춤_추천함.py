@@ -79,12 +79,12 @@ def remove_from_view(url: str) -> None:
 
 
 def run_reanalysis() -> int:
-    """최신 웹 소스 + 저장된 프로필/시간표/캘린더/졸업진단 기준으로 추천을 다시 계산."""
+    """최신 웹 소스에서 신규/변경 공지만 추천 분석."""
     from main import refresh_recommendations
 
     log = io.StringIO()
     with contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
-        candidates = refresh_recommendations(force_reanalysis=True)
+        candidates = refresh_recommendations(force_reanalysis=False)
     st.session_state.last_refresh_log = log.getvalue()
     st.session_state.recommendations = load_recommendations()
     return len(candidates)
@@ -302,8 +302,9 @@ def show_update_rules(rows: list[dict]) -> None:
         st.markdown(
             "- 이 화면은 현재 상태가 `추천완료`인 항목을 분야별로 모아 보여줍니다.\n"
             "- 설정에서 `끄기`로 둔 분야는 추천함 표시와 수동 새로고침 재분석에서 제외됩니다.\n"
-            "- 매일 자동 실행은 새 공지를 분석해 추천을 추가하고, 같은 URL은 중복 없이 갱신합니다.\n"
-            "- `새로고침`은 최신 웹 소스와 저장된 시간표·캘린더·프로필·졸업진단 기준으로 다시 분석합니다.\n"
+            "- 매일 자동 실행과 `새로고침`은 새 공지나 내용이 바뀐 공지만 분석합니다.\n"
+            "- 같은 URL의 제목·본문·마감일·분야가 그대로면 기존 분석 결과를 유지해 시간을 줄입니다.\n"
+            "- 시간표·캘린더·프로필·졸업진단 기준이 크게 바뀌어 전체 재분석이 필요하면 코드에서 `force_reanalysis=True`로 실행합니다.\n"
             "- 시험기간/시험 직전에는 분야별 최상위 1건이 시간 초과여도 `시험기간 주의`로 남습니다.\n"
             "- 국민대 공식 학사일정은 7일 이내 일정이면 순위 없이 정보성 추천으로 보여줍니다."
         )
@@ -321,10 +322,10 @@ st.title("내 맞춤 추천함")
 top = st.columns([4, 1])
 top[0].caption("분야를 고르면 지금까지 추천된 항목을 모아 보고, 필요한 것만 노션 캘린더에 추가할 수 있습니다.")
 if top[1].button("새로고침", use_container_width=True):
-    with st.spinner("최신 정보로 추천을 다시 분석 중입니다. 웹 수집과 LLM 분석 때문에 잠시 걸릴 수 있어요."):
+    with st.spinner("최신 정보를 확인하고 신규/변경 공지만 분석 중입니다."):
         try:
             count = run_reanalysis()
-            st.toast(f"추천 새로 분석 완료: 후보 {count}건")
+            st.toast(f"증분 분석 완료: 신규/변경 후보 {count}건")
         except Exception as e:
             st.error(f"추천 재분석 실패: {e}")
             st.stop()
@@ -339,7 +340,7 @@ show_update_rules(all_rows)
 
 rows = st.session_state.recommendations
 if not rows:
-    st.info("아직 추천 대기 항목이 없습니다. 새로고침을 누르면 최신 공지와 현재 일정 기준으로 다시 분석합니다.")
+    st.info("아직 추천 대기 항목이 없습니다. 새로고침을 누르면 최신 공지 중 신규/변경 항목을 분석합니다.")
     st.stop()
 
 enabled_categories = preferences.enabled_categories()
