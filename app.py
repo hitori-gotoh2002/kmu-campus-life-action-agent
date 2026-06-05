@@ -47,4 +47,5 @@ except Exception as e:
     st.caption(f"프로필 로드 보류: {e}")
 
 st.divider()
-st.caption("데이터: 노션(실제 일정·포트폴리오) · 로컬 백엔드(시간표·이력·설정) · OpenAI · 텔레그램")
+backend_label = "Supabase 원격 DB" if store.active_backend() == "supabase" else "로컬 백엔드"
+st.caption(f"데이터: 노션(실제 일정·포트폴리오) · {backend_label}(시간표·이력·설정) · OpenAI · 텔레그램")

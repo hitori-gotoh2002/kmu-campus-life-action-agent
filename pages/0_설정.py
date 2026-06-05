@@ -12,7 +12,8 @@ from modules import store, classifier, timetable
 store.load_keys_into_env()
 st.set_page_config(page_title="설정", page_icon="⚙️", layout="centered")
 st.title("⚙️ 설정")
-st.caption("API 키와 추천 수신 방식을 여기서 설정합니다. (로컬에만 저장 · 노션에는 캘린더/포트폴리오만)")
+backend_label = "Supabase 원격 DB" if store.active_backend() == "supabase" else "로컬 SQLite"
+st.caption(f"API 키와 추천 수신 방식을 여기서 설정합니다. 현재 저장소: {backend_label} · 노션에는 캘린더/포트폴리오만 저장")
 
 
 def editor_rows(value) -> list[dict]:
@@ -22,7 +23,7 @@ def editor_rows(value) -> list[dict]:
 
 # ── API 키 ─────────────────────────────────────────────────────
 st.subheader("🔑 API 키")
-st.caption("각자 본인 키를 넣으면 개인 비서로 동작합니다. 키는 이 PC(로컬 DB)에만 저장됩니다.")
+st.caption("각자 본인 키를 넣으면 개인 비서로 동작합니다. Supabase 원격 DB 사용 시 이 설정도 원격 DB에 저장될 수 있습니다.")
 
 KEYS = [
     ("OPENAI_API_KEY", "OpenAI API 키", "sk-..."),
