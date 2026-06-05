@@ -26,7 +26,7 @@ st.caption("ON국민 **수강내역(수강신청확인서) 엑셀**을 학기별
 PROGRAMS = graduation_link.load_programs()
 PRIMARY = {k: v for k, v in PROGRAMS.items() if v.get("track_type") == "primary"}
 CONV = {k: v for k, v in PROGRAMS.items() if v.get("track_type") == "convergence"}
-AREAS = ["전공", "기초교양", "핵심교양", "자유교양", "일반선택"]
+AREAS = ["전공", "기초교양", "핵심교양", "자유교양", "일반선택", "융합전공"]
 
 # 새로고침해도 유지 — 백엔드(store)에서 복원
 for key in ("grad_verify", "grad_audit"):
