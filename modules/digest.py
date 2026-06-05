@@ -57,7 +57,7 @@ def _send_card(token: str, chat_id: str, c: dict):
     if d["meta"]:
         lines.append(" · ".join(d["meta"]))
     if d["summary"]:
-        lines.append(d["summary"])
+        lines.append(calendar_summary.summary_to_plain_text(d["summary"]))
     if d["reason"]:
         lines.append(f"🧭 추천 이유: {d['reason'][:200]}")
     if d["checklist"]:

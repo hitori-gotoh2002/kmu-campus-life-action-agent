@@ -47,7 +47,7 @@ def record(notice, analysis=None, status="수집됨", category=None) -> None:
         "title": (notice.title or "")[:300],
         "category": category or getattr(notice, "category", "") or "기타",
         "source": getattr(notice, "source", ""),
-        "body": (getattr(notice, "body", "") or "")[:1500],
+        "body": (getattr(notice, "body", "") or "")[:5000],
         "score": int(analysis.suitability_score) if analysis else None,
         "hours": int(analysis.estimated_hours_needed) if analysis else None,
         "deadline": _norm_date(getattr(notice, "date", "")),

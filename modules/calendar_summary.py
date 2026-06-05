@@ -38,7 +38,7 @@ def _safe_int(value: Any, default: int = 0) -> int:
 # 크롤링 본문에서 흔한 노이즈(작성자/조회수/이전글 등) 제거
 _BODY_NOISE = re.compile(
     r"(작성자|작성일|조회수|첨부파일|이전\s*글|다음\s*글|목록|등록일|담당자|담당부서|"
-    r"붙임\d*|☎|조회\s*\d+|\d{2,4}[.\-]\d{1,2}[.\-]\d{1,2})"
+    r"붙임\d*|☎|조회\s*\d+)"
 )
 
 # 분야별 맞춤 준비 체크리스트
@@ -56,6 +56,21 @@ _CHECKLISTS = {
     "학사일정": ["신청/처리 기한 확인", "필요 절차·서류 준비", "기한 내 처리"],
 }
 _DEFAULT_CHECK = ["공지 원문에서 자격·제출물·마감 확인", "필요 서류/준비물 정리", "마감 전 신청·제출"]
+
+_CIRCLED_NUMBERS = "①②③④⑤⑥⑦⑧⑨⑩"
+_INLINE_MARKER_RE = re.compile(rf"\s+([{_CIRCLED_NUMBERS}])\s*")
+_NUMBERED_MARKER_RE = re.compile(r"(?<!\d)\s+([1-9])\.\s*(?=[가-힣A-Za-zA-Z])")
+_NOTICE_MARKER_RE = re.compile(r"\s+(※)\s*")
+_SYMBOL_BULLET_RE = re.compile(r"\s+(◎|○)\s*")
+_RAW_NOTICE_MARKER_RE = re.compile(rf"(\s[1-9]\.\s|[{_CIRCLED_NUMBERS}※◎○])")
+_LABEL_RE = re.compile(r"^\s*-?\s*([^:：]{2,24})\s*[:：]\s*(.+)$")
+_KNOWN_LABELS = (
+    "대상", "지원 대상", "신청 대상", "참가 대상", "자격", "지원 자격", "신청 자격",
+    "기간", "신청 기간", "접수 기간", "활동 기간", "일정", "마감",
+    "방법", "신청 방법", "접수 방법", "제출 방법",
+    "혜택", "지원 내용", "선발", "주의사항", "유의사항", "문의",
+)
+_GOOD_SUMMARY_ENDINGS = (".", "!", "?", "…", "다", "요", "함", "됨", "가능", "제외", "참조", "확인")
 
 _KIND = {
     "공모전·대회": "공모전/대회", "대외활동·서포터즈": "대외활동·서포터즈", "장학금": "장학금",
@@ -76,20 +91,87 @@ def _clean_body(body: str) -> str:
     return _clean(s)
 
 
+def _normalize_summary_text(text: str) -> str:
+    """공지 원문식 한 줄 나열을 읽기 좋은 문단/항목 형태로 되살린다."""
+    text = (text or "").strip()
+    if not text:
+        return ""
+    text = text.replace("\r", "\n")
+    text = _NUMBERED_MARKER_RE.sub("\n- ", text)
+    text = _INLINE_MARKER_RE.sub("\n- ", text)
+    text = _SYMBOL_BULLET_RE.sub("\n- ", text)
+    text = _NOTICE_MARKER_RE.sub(r"\n\n\1 ", text)
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def _format_label_line(line: str, markdown: bool = False) -> str:
+    """'신청 기간: ...' 같은 핵심 항목을 한눈에 들어오게 정리한다."""
+    bullet = line.strip().startswith("-")
+    raw = line.strip()[1:].strip() if bullet else line.strip()
+    m = _LABEL_RE.match(raw)
+    if not m:
+        if bullet and len(raw) <= 18 and any(key in raw for key in _KNOWN_LABELS):
+            return f"- **{raw}**" if markdown else f"- {raw}"
+        return f"- {raw}" if bullet else raw
+    label, value = m.group(1).strip(), m.group(2).strip()
+    if not any(key in label for key in _KNOWN_LABELS):
+        return f"- {raw}" if bullet else raw
+    if markdown:
+        return f"- **{label}:** {value}"
+    return f"- {label}: {value}"
+
+
+def _looks_truncated(text: str) -> bool:
+    s = _clean(text)
+    if len(s) < 360:
+        return False
+    return not s.endswith(_GOOD_SUMMARY_ENDINGS)
+
+
+def _looks_like_raw_notice_excerpt(text: str) -> bool:
+    return len(_clean(text)) < 700 and bool(_RAW_NOTICE_MARKER_RE.search(text or ""))
+
+
+def _choose_content(summary: str, body: str) -> str:
+    """저장된 요약이 중간에서 끊긴 경우 본문 기반 요약으로 복구한다."""
+    summary = str(summary or "").strip()
+    body_summary = _clean_body(body)
+    should_recover = (
+        _looks_truncated(summary)
+        or _looks_like_raw_notice_excerpt(summary)
+    ) and len(body_summary) > len(_clean(summary)) + 80
+    if summary and not should_recover:
+        return summary
+    return body_summary or summary
+
+
+def _split_sentences(text: str) -> list[str]:
+    parts = re.split(r"((?:다|요)\.|[.!?])\s+", _clean(text))
+    sentences = []
+    for idx in range(0, len(parts), 2):
+        sentence = parts[idx].strip()
+        if not sentence:
+            continue
+        ending = parts[idx + 1] if idx + 1 < len(parts) else ""
+        sentences.append((sentence + ending).strip())
+    return sentences
+
+
 def _summary_paragraphs(text: str) -> list[str]:
     """상세 설명을 노션 문단 블록용으로 자른다. 줄바꿈이 있으면 문단으로,
-    한 덩어리로 길면 문장 단위로 묶어 읽기 좋게 나눈다(표·키워드 형식 없음)."""
-    text = (text or "").strip()
+    한 덩어리로 길면 문장 단위로 묶어 읽기 좋게 나눈다."""
+    text = _normalize_summary_text(text)
     if not text:
         return ["원문에서 모집 대상·일정·혜택을 확인하세요."]
     paras = [p.strip() for p in text.replace("\r", "\n").split("\n") if p.strip()]
     if len(paras) > 1:
-        return [_clip(p, 1800) for p in paras]
+        return [_clip(_format_label_line(p), 1800) for p in paras]
     if len(text) <= 450:
         return [text]
     # 긴 산문은 문장 2~3개씩 묶어 문단으로
-    sents = re.split(r"(?<=다)\.\s+|(?<=요)\.\s+|[.!?]\s+", _clean(text))
-    sents = [s.strip() for s in sents if s.strip()]
+    sents = _split_sentences(text)
     chunks, cur = [], ""
     for s in sents:
         cur = (cur + " " + s).strip() if cur else s
@@ -101,6 +183,23 @@ def _summary_paragraphs(text: str) -> list[str]:
     return chunks or [text]
 
 
+def summary_to_markdown(text: str) -> str:
+    """웹 화면용 내용 요약. 기존 한 줄 요약도 문단/불릿으로 재배치한다."""
+    blocks = _summary_paragraphs(text)
+    lines = []
+    for block in blocks:
+        if block.startswith("- "):
+            lines.append(_format_label_line(block, markdown=True))
+        else:
+            lines.append(block)
+    return "\n\n".join(lines)
+
+
+def summary_to_plain_text(text: str) -> str:
+    """텔레그램 같은 일반 텍스트 채널용 내용 요약."""
+    return "\n".join(_summary_paragraphs(text))
+
+
 def build_event_details(candidate: dict) -> dict:
     """추천 후보를 사용자에게 도움이 되는 설명 구조로 변환한다."""
     notice = candidate["notice"]
@@ -109,7 +208,7 @@ def build_event_details(candidate: dict) -> dict:
     title = _clean(_get(notice, "title"))
     # 활동 '내용 요약'(산문). LLM summary(자세한 설명)를 우선, 없으면 본문 정리본.
     # 문단 구분(줄바꿈)을 살려야 하므로 _clean(공백 평탄화)을 적용하지 않는다.
-    content = str(_get(analysis, "summary") or "").strip() or _clean_body(_get(notice, "body"))
+    content = _choose_content(_get(analysis, "summary"), _get(notice, "body"))
     reason = _clean(_get(analysis, "matching_reason"))
     hours = _safe_int(_get(analysis, "estimated_hours_needed"))
     score = _safe_int(_get(analysis, "suitability_score"))
@@ -193,7 +292,10 @@ def to_notion_children(details: dict) -> list[dict]:
     # 1) 내용 요약 — 활동을 자세히 풀어 쓴 산문(추천 이유와 분리).
     blocks.append(_heading("📝 내용 요약"))
     for para in _summary_paragraphs(details.get("summary", "")):
-        blocks.append(_paragraph(para))
+        if para.startswith("- "):
+            blocks.append(_bullet(para[2:].strip()))
+        else:
+            blocks.append(_paragraph(para))
 
     # 2) 핵심 정보 — 마감/예상시간/적합도/도메인/출처를 글머리표로
     if details.get("meta"):

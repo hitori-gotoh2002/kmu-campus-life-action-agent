@@ -20,7 +20,7 @@ try:
     class AnalysisResult(BaseModel):
         is_relevant: bool = Field(description="학생 진로와 관련 있는 활동인지")
         suitability_score: int = Field(ge=0, le=100, description="적합도 0~100")
-        summary: str = Field(default="", description="키워드 중심 3~5줄(줄바꿈 구분) 내용 요약 — 왜 적합한지는 제외")
+        summary: str = Field(default="", description="줄바꿈이 있는 내용 요약 — 왜 적합한지는 제외")
         matching_reason: str = Field(description="적합/부적합 판단 근거")
         estimated_hours_needed: int = Field(ge=0, description="가중치 적용 후 예상 소요 시간")
         domain: str = Field(default="", description="분류된 도메인")
@@ -57,6 +57,18 @@ _DOMAIN_KEYWORDS = {
     "학사/수강": ["계절학기", "전공", "학점", "수강", "개설"],
 }
 _BASE_HOURS = {"AI/데이터 모델링": 28, "서비스 기획/마케팅": 30, "학사/수강": 45, "기타": 20}
+
+
+def _body_excerpt(text: str, limit: int = 1200) -> str:
+    text = " ".join((text or "").split()).strip()
+    if len(text) <= limit:
+        return text
+    chunk = text[:limit].rstrip()
+    candidates = [chunk.rfind(mark) for mark in (".", "다.", "요.", "함.", "됨.")]
+    cut = max(candidates)
+    if cut >= int(limit * 0.6):
+        return chunk[: cut + 1].strip()
+    return chunk.rstrip(" ,.;:·") + "…"
 
 
 def _classify_domain(text: str) -> str:
@@ -112,7 +124,7 @@ def _heuristic_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
               f"희망직무 '{ctx.get('desired_role','')}' 관점에서 적합도 {score}점.")
 
     body_txt = " ".join((notice.body or "").split()).strip()
-    summary = (body_txt[:400] if body_txt
+    summary = (_body_excerpt(body_txt) if body_txt
                else f"'{notice.title}' 공고입니다. 원문에서 모집 대상·일정·혜택을 확인하세요.")
 
     print(f"   [analyzer] 개인 역량 가중치 {weight}배 적용 완료  → {est_hours}시간")
@@ -150,21 +162,22 @@ def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
         "인턴/현장실습 40, 자격증 50, 계절학기 45.\n"
         "- 보정: 학생 강점(high_proficiency) 분야면 ×0.7, 생소(low_proficiency) 분야면 ×1.5.\n"
         "- is_relevant=false 이면 estimated_hours_needed 는 0 으로 둔다.\n"
-        "[summary] — 활동 내용을 '자세히 설명'하는 글(추천 이유 아님)\n"
-        "- 표·글머리표·'항목: 내용' 같은 형식 없이, 자연스러운 문장(산문)으로 풀어서 설명한다.\n"
-        "- 아래 '공모전·대회 / 대외활동·서포터즈 / 채용·인턴' 세 분야는 특히 자세하게 4~6문장으로 쓴다. "
-        "주최/주관 기관, 누가 참여할 수 있는지(대상·자격), 무엇을 하는지(활동·주제·직무), "
-        "기간·접수 일정, 받을 수 있는 혜택·우대까지 원문에 있는 내용을 빠짐없이 풀어 설명한다.\n"
-        "- 그 외 분야(장학금·자격증·학사일정 등)는 2~3문장으로 핵심을 설명한다.\n"
+        "[summary] — 사용자가 바로 이해할 수 있는 '내용 요약'(추천 이유 아님)\n"
+        "- 반드시 줄바꿈이 포함된 읽기 좋은 문자열로 작성한다. 한 줄로 길게 쓰지 않는다.\n"
+        "- 첫 문장은 이 공지가 무엇인지 1문장으로 설명한다.\n"
+        "- 그 다음 줄부터는 원문에 있는 정보만 골라 `대상: ...`, `기간: ...`, `신청 방법: ...`, "
+        "`혜택: ...`, `주의사항: ...`처럼 라벨이 있는 줄로 정리한다. 정보가 없는 라벨은 생략한다.\n"
+        "- 공모전·대회 / 대외활동·서포터즈 / 채용·인턴은 대상·활동 내용·일정·혜택·제출/선발 방식을 최대한 포함한다.\n"
+        "- 장학금은 신청 대상, 신청 기간, 신청 방법, 선발/지급 조건, 유의사항을 우선 포함한다.\n"
+        "- 자격증·학사일정은 일정, 대상, 해야 할 일, 주의사항 중심으로 정리한다.\n"
         "- 원문(body)에 있는 사실만 쓰고, 작성자·조회수·이전글 같은 군더더기는 제외한다.\n"
         "- '학생에게 왜 적합한지'·적합도·강점 연결은 절대 쓰지 않는다(그건 matching_reason).\n"
         "- 원문 정보가 부족하면 제목·분야에서 알 수 있는 사실만 간단히 설명한다.\n"
-        "- 예) \"이 공모전은 방위사업청과 국방과학연구소가 주최하며, 참가 자격 제한 없이 학생부와 일반부로 "
-        "나누어 모집합니다. 학생부는 대학생·대학원생·휴학생이, 일반부는 일반인과 예비창업자, 창업 3년 이내 "
-        "초기 스타트업이 지원할 수 있습니다. 6월 1일부터 30일 오후 2시까지 접수하며, 국방기술거래장터에 "
-        "등록된 기술을 활용한 민간 사업화 아이디어를 다룹니다. 기계·소재, 전기·전자, 정보·통신, 바이오·의료 등 "
-        "다양한 분야로 지원할 수 있고, 우수작에는 방위사업청장상과 멘토링, MVP 제작비, 기술이전·사업화 연계가 "
-        "제공됩니다.\"\n"
+        "- 예) \"방위사업청과 국방과학연구소가 주최하는 국방기술 활용 창업 아이디어 공모전입니다.\\n"
+        "대상: 대학생·대학원생·휴학생은 학생부로, 예비창업자와 창업 3년 이내 기업은 일반부로 지원할 수 있습니다.\\n"
+        "기간: 6월 1일부터 6월 30일 오후 2시까지 접수합니다.\\n"
+        "내용: 국방기술거래장터에 등록된 기술을 활용해 민간 사업화 아이디어를 제안합니다.\\n"
+        "혜택: 우수작에는 방위사업청장상, 멘토링, MVP 제작비, 기술이전·사업화 연계가 제공됩니다.\"\n"
         "[matching_reason] — '왜 이 학생에게 추천하는지'만 (활동 내용 재설명 금지)\n"
         "- 활동이 무엇인지 다시 설명하지 말고, summary 와 내용이 겹치지 않게 쓴다.\n"
         "- 1~2문장: 학생의 희망직무·강점·부족한 역량과 어떻게 연결되는지 설명한다.\n"

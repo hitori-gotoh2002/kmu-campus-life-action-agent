@@ -263,7 +263,7 @@ def render_recommendation_card(row: dict, index: int) -> None:
             st.warning(warning)
 
         st.markdown("**내용 요약**")
-        st.write(content_summary_text(row))
+        st.markdown(calendar_summary.summary_to_markdown(content_summary_text(row)))
 
         if reason:
             st.markdown("**왜 추천됐나요**")
