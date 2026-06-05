@@ -362,6 +362,8 @@ def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
         "- 기본: 공모전·경진대회 30, 해커톤 20, 대외활동·서포터즈(기간형) 35, "
         "인턴/현장실습 40, 자격증 50, 계절학기 45.\n"
         "- 보정: 학생 강점(high_proficiency) 분야면 ×0.7, 생소(low_proficiency) 분야면 ×1.5.\n"
+        "- student.completed_courses(졸업진단에서 가져온 '이수 완료 과목')가 활동 주제·선수지식과 "
+        "맞으면 이미 준비된 상태로 보고 시간을 추가로 낮춘다. 단, 미이수라고 감점·가중하지는 않는다.\n"
         "- is_relevant=false 이면 estimated_hours_needed 는 0 으로 둔다.\n"
         "[summary] — 사용자가 '할지 말지' 판단할 수 있는 상세 내용 요약(추천 이유 아님)\n"
         "- 반드시 줄바꿈이 포함된 6~10줄, 500~900자 안팎의 브리핑으로 작성한다. "
@@ -391,6 +393,8 @@ def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
         "[matching_reason] — '왜 이 학생에게 추천하는지'만 (활동 내용 재설명 금지)\n"
         "- 활동이 무엇인지 다시 설명하지 말고, summary 와 내용이 겹치지 않게 쓴다.\n"
         "- 1~2문장: 학생의 희망직무·강점·부족한 역량과 어떻게 연결되는지 설명한다.\n"
+        "- student.completed_courses 중 이 활동과 직접 관련된 과목을 이미 이수했다면 "
+        "'관련 과목(○○) 이수로 준비된 상태'를 1문장으로 언급한다(관련 이수 과목이 없으면 생략).\n"
         "- 1문장: 준비시간, 마감, 시험기간 부담처럼 실제 판단에 필요한 주의점을 적는다."
     )
     user_prompt = json.dumps({

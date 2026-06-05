@@ -43,6 +43,8 @@ def load_profile() -> dict:
         "low_proficiency": _split(kv.get("약점", "")),
         "interests": _split(kv.get("관심사", "")),
         "unmet_graduation_requirement": kv.get("미충족졸업요건", ""),
+        # 졸업진단(수강신청내역)에서 동기화한 '이수 완료 과목' — 보유 역량(긍정 신호)
+        "completed_courses": _split(kv.get("이수과목", ""), ";"),
         "scheduling": {
             "weekly_total_hours": int(float(kv.get("주간가용시간") or 112)),
             "safe_buffer_ratio": float(kv.get("안전버퍼비율") or 0.3),
