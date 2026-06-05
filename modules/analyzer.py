@@ -98,7 +98,7 @@ def _proficiency_weight(domain: str, text: str, ctx: dict) -> tuple[float, str]:
     return 1.0, "기준 분야 → 1.0배"
 
 
-def _heuristic_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
+def _heuristic_estimate(notice, parsed_doc, ctx: dict) -> tuple[str, int, float, str, int]:
     full_text = f"{notice.title} {notice.body}"
     if parsed_doc:
         full_text += " " + parsed_doc.text
@@ -107,11 +107,20 @@ def _heuristic_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
     base_hours = _BASE_HOURS.get(domain, _BASE_HOURS["기타"])
     weight, weight_reason = _proficiency_weight(domain, full_text, ctx)
     est_hours = round(base_hours * weight)
+    return domain, base_hours, weight, weight_reason, est_hours
+
+
+def _heuristic_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
+    full_text = f"{notice.title} {notice.body}"
+    if parsed_doc:
+        full_text += " " + parsed_doc.text
+
+    domain, base_hours, weight, weight_reason, est_hours = _heuristic_estimate(notice, parsed_doc, ctx)
 
     score = 55
-    if weight == 0.7:
+    if "0.7배" in weight_reason:
         score += 30
-    elif weight == 1.5:
+    elif "1.5배" in weight_reason:
         score -= 15
     if any(p.lower() in full_text.lower() for p in ["ai", "데이터", "분석", "nlp", "생성형"]):
         score += 10
@@ -219,6 +228,19 @@ def _llm_analyze(notice, parsed_doc, ctx: dict) -> AnalysisResult:
         raw = resp.text
 
     data = json.loads(re.sub(r"```json|```", "", raw).strip())
+    if data.get("estimated_hours_needed") in (None, ""):
+        if data.get("is_relevant") is False:
+            data["estimated_hours_needed"] = 0
+        else:
+            domain_guess, _base, _weight, _why, est_hours = _heuristic_estimate(notice, parsed_doc, ctx)
+            data["estimated_hours_needed"] = est_hours
+            data.setdefault("domain", domain_guess)
+            print(f"   [analyzer] LLM 시간 누락 → 휴리스틱으로 {est_hours}시간만 보정")
+    if not data.get("domain"):
+        domain_guess, _base, _weight, _why, _est_hours = _heuristic_estimate(notice, parsed_doc, ctx)
+        data["domain"] = domain_guess
+    data.setdefault("summary", "")
+    data.setdefault("matching_reason", "")
     print(f"   [analyzer] LLM 구조화 출력 수신 → {data.get('estimated_hours_needed')}시간")
     return AnalysisResult(**data)
 
