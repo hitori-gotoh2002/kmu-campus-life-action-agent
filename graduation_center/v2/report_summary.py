@@ -28,7 +28,9 @@ from graduation_center.v2.whatif import (
 )
 
 CACHE_PATH = Path(__file__).resolve().parents[1] / "data/graduation/v2/summary_cache.json"
-SUMMARY_SCHEMA_VERSION = 7        # 프롬프트·schema·필터 규칙 변경 시 +1 — 구 엔트리 자동 미스
+SUMMARY_SCHEMA_VERSION = 9        # 프롬프트·schema·필터 규칙 변경 시 +1 — 구 엔트리 자동 미스
+                                  # (v8: 트랙 변경 갈림길 — add enum에 선언 전공 포함·프롬프트 교육)
+                                  # (v9: '충족 전환=개선' 방향 분류 — 산출 불가와 구분)
 MAX_CANDIDATES = 5                # LLM 제안 상한(Thought의 폭)
 MAX_SIMULATIONS = 4               # pre 통과 후보 시뮬레이션 상한(비용 가드)
 MAX_ACCEPTED = 3                  # 최종 채택 상한
@@ -119,9 +121,12 @@ delta 필드 의미(허용 범위 준수):
 - calendar_delay_terms(휴학 1~4) · remaining_semesters_change(잔여 학기 ±4)
 - seasonal_semester_allowed(계절학기) · max_credits_per_term(학기당 상한 9~24)
 - prev_term_gpa_ge_375(성적우수 +3) · add_convergence/drop_convergence(융합전공 추가/포기)
+- **트랙 변경(다전공↔부전공)**: 이미 신청된 전공의 id를 add_convergence에 새 track으로 넣어라
+  (drop에는 넣지 마라). 부전공은 요구가 낮아(18학점·중복인정 캡 6) **융합 부족이 크거나 겹침이
+  캡을 초과하는 학생의 유력한 갈림길**이다 — 그런 facts가 보이면 '부전공 전환' 후보를 검토하라.
 
 reason_code: graduate_faster(더 빨리 졸업) / overflow_relief(초과학기 해소) /
-conv_tradeoff(다전공 유지·포기 갈림길) / load_adjust(수강 부담 조정) / timeline_extend(기간 연장 영향)
+conv_tradeoff(다전공 유지·포기·트랙변경 갈림길) / load_adjust(수강 부담 조정) / timeline_extend(기간 연장 영향)
 
 규칙:
 - **파라미터 값까지 네가 고른다** — 같은 reason이라도 값(계절 허용 vs 상한 18, 잔여 +1 vs +2,
@@ -134,7 +139,8 @@ conv_tradeoff(다전공 유지·포기 갈림길) / load_adjust(수강 부담 �
 
 
 # ---------- 관련성 필터 (결정론 — pre/post 2단, 탈락은 기록) ----------
-def _delta_label(delta: WhatIfDelta, prog_names: dict) -> str:
+def _delta_label(delta: WhatIfDelta, prog_names: dict, declared: set | None = None) -> str:
+    declared = declared or set()
     parts = []
     if delta.calendar_delay_terms:
         parts.append(f"휴학 {delta.calendar_delay_terms}학기")
@@ -146,9 +152,13 @@ def _delta_label(delta: WhatIfDelta, prog_names: dict) -> str:
         parts.append(f"학기당 {delta.max_credits_per_term:g}학점")
     if delta.prev_term_gpa_ge_375 is not None:
         parts.append("직전 3.75" + ("↑" if delta.prev_term_gpa_ge_375 else "↓"))
+    track_change = {ch.program_id for ch in delta.add_convergence if ch.program_id in declared}
     for ch in delta.add_convergence:
-        parts.append(f"{prog_names.get(ch.program_id, ch.program_id)} 추가({ch.track})")
+        nm = prog_names.get(ch.program_id, ch.program_id)
+        parts.append(f"{nm} {ch.track} 전환" if ch.program_id in declared else f"{nm} 추가({ch.track})")
     for pid in delta.drop_convergence:
+        if pid in track_change:
+            continue                                  # drop+add 동일 id = 트랙 변경 — '포기' 표기 금지
         parts.append(f"{prog_names.get(pid, pid)} 포기")
     return " · ".join(parts) or "변경 없음"
 
@@ -239,8 +249,14 @@ def _effect(diff) -> tuple[str, str]:
     gb, ga = diff.graduation_term_before, diff.graduation_term_after
     if gb and ga and gb != ga:
         parts.append(f"예상 졸업 {'단축' if ga < gb else '지연'}")
-    elif gb and not ga:                              # 산출 가능→불가 — 악화(적대 R1 비대칭)
-        parts.append("예상 졸업 산출 불가 전환")
+    elif gb and not ga:
+        # 산출→None의 두 얼굴: 충족이라 잔여 계획이 필요 없어진 것(최선)과 배치 불가(악화)를
+        # 구분 — 묶어서 '악화'로 칠하면 '부전공 전환 → 즉시 충족(S)'이 빨강으로 뜨는 표면 모순
+        # (2026-06-05 사용자 발견: 에이전트가 찾은 최고 갈림길이 악화로 분류됨)
+        if diff.already_met_after:
+            parts.append("추가 수강 없이 충족 전환")
+        else:                                        # 산출 가능→불가 — 악화(적대 R1 비대칭)
+            parts.append("예상 졸업 산출 불가 전환")
     if not diff.overflow_before and diff.overflow_after:
         parts.append("초과학기 발생")
     elif diff.overflow_before and not diff.overflow_after:
@@ -251,7 +267,7 @@ def _effect(diff) -> tuple[str, str]:
         parts.append("배치 불가 전환")
     label = " · ".join(parts) or "변화 없음"
     worsen = any(w in label for w in ("악화", "지연", "초과학기 발생", "불가 전환"))
-    improve = any(w in label for w in ("개선", "단축", "해소", "가능 전환"))
+    improve = any(w in label for w in ("개선", "단축", "해소", "가능 전환", "없이 충족"))
     kind = "worsen" if worsen else "improve" if improve else "neutral"
     return (label, kind)
 
@@ -523,7 +539,7 @@ def run_report_summary(payload: dict, audit, risk, plan, ctx: StudentContext,
                                          rationale=rationale, verdict="rejected",
                                          rejected_by="invalid_delta"))
             continue
-        label = _delta_label(delta, prog_names)
+        label = _delta_label(delta, prog_names, declared=set(ctx.convergence_program_ids))
         if delta.is_empty():
             review.append(ScenarioReview(label=label, reason_code=reason, rationale=rationale,
                                          verdict="rejected", rejected_by="no_op"))

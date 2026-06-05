@@ -1,0 +1,104 @@
+{
+  "S1_졸업반_김융합": {
+    "student_no": "20220001",
+    "admission_year": 2022,
+    "files": [
+      "1차학기.xls",
+      "1학년 하계.xls",
+      "2차학기.xls",
+      "1학년 동계.xls",
+      "3차학기.xls",
+      "4차학기.xls",
+      "5차학기.xls",
+      "6차학기.xls",
+      "7차학기.xls"
+    ],
+    "context": {
+      "program_id": "ai_bigdata",
+      "admission_year": 2022,
+      "convergence_program_ids": [
+        "dsci_convergence"
+      ],
+      "convergence_tracks": {
+        "dsci_convergence": "다전공"
+      },
+      "current_term": "2026-1",
+      "remaining_semesters": 1,
+      "gpa_min_met": "yes"
+    }
+  },
+  "S2_3학년_박분석": {
+    "student_no": "20220002",
+    "admission_year": 2022,
+    "files": [
+      "1차학기.xls",
+      "2차학기.xls",
+      "3차학기.xls",
+      "4차학기.xls",
+      "5차학기.xls"
+    ],
+    "context": {
+      "program_id": "ai_bigdata",
+      "admission_year": 2022,
+      "convergence_program_ids": [
+        "dsci_convergence"
+      ],
+      "convergence_tracks": {
+        "dsci_convergence": "다전공"
+      },
+      "current_term": "2025-2",
+      "remaining_semesters": 3,
+      "gpa_min_met": "yes"
+    }
+  },
+  "S3_2학년_이지연": {
+    "student_no": "20240003",
+    "admission_year": 2024,
+    "files": [
+      "1차학기.xls",
+      "1학년 하계.xls",
+      "2차학기.xls"
+    ],
+    "context": {
+      "program_id": "ai_bigdata",
+      "admission_year": 2024,
+      "convergence_program_ids": [
+        "dsci_convergence"
+      ],
+      "convergence_tracks": {
+        "dsci_convergence": "다전공"
+      },
+      "current_term": "2025-1",
+      "remaining_semesters": 2,
+      "gpa_min_met": "unknown"
+    }
+  },
+  "S4_4학년_최계절": {
+    "student_no": "20220004",
+    "admission_year": 2022,
+    "files": [
+      "1차학기.xls",
+      "1학년 하계.xls",
+      "2차학기.xls",
+      "3차학기.xls",
+      "4차학기.xls",
+      "5차학기.xls",
+      "6차학기.xls"
+    ],
+    "context": {
+      "program_id": "ai_bigdata",
+      "admission_year": 2022,
+      "convergence_program_ids": [
+        "dsci_convergence"
+      ],
+      "convergence_tracks": {
+        "dsci_convergence": "다전공"
+      },
+      "current_term": "2026-1",
+      "remaining_semesters": 2,
+      "seasonal_semester_allowed": true,
+      "prev_term_gpa_ge_375": true,
+      "gpa_min_met": "yes"
+    }
+  }
+}

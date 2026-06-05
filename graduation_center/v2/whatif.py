@@ -40,13 +40,16 @@ def _term_ko(label: str | None) -> str:
 
 # ---------- ① 매개변수 추출기 (LLM) ----------
 def _candidates(ctx: StudentContext) -> tuple[list[str], list[str]]:
-    """add/drop 후보 — add는 카탈로그가 실제 load되는 비-primary만(검증 라운드2 M3)."""
+    """add/drop 후보 — add는 카탈로그가 실제 load되는 비-primary만(검증 라운드2 M3).
+    이미 선언된 전공도 add 후보에 포함한다 — '다전공을 부전공으로 바꾸면?' 같은 **트랙 변경**을
+    add(동일 id, 새 track)로 표현하기 위함. 제외하면 표현 수단이 없어 LLM이 drop만 내놓아
+    '부전공 전환'이 조용히 '다전공 포기' 시뮬레이션으로 둔갑한다(사용자 보고 2026-06-05)."""
     progs = load_programs()
     add_ids = []
     for pid, p in progs.items():
         if p.get("track_type", "primary") == "primary":
             continue
-        if pid == ctx.program_id or pid in ctx.convergence_program_ids:
+        if pid == ctx.program_id:
             continue
         try:
             load_catalog(pid)
@@ -123,8 +126,9 @@ def _prompt(question: str, ctx: StudentContext, conv_names: list[str]) -> str:
 - seasonal_semester_allowed: 계절학기 수강 가능 여부 변경.
 - max_credits_per_term: 학기당 수강 학점 상한 변경. "15학점씩만 들으면"=15. 허용 9~24의 정수 권장.
 - prev_term_gpa_ge_375: 직전학기 평점 3.75 이상 여부(신청학점 +{PREV_GPA_BONUS:.0f} 보너스).
-- add_convergence / drop_convergence: 융합·연계전공 추가/포기.
+- add_convergence / drop_convergence: 융합·연계전공 추가/포기/트랙 변경.
   예: "다전공·부전공을 빼면?"·"부전공 포기하면?" → drop_convergence에 위 '신청 융합전공'의 id를 넣어라(빈 배열 금지).
+  예: "다전공을 부전공으로 바꾸면?" → add_convergence에 같은 id로 {{"program_id": 그 id, "track": "부전공"}} (트랙 변경 — drop에 넣지 마라).
 
 규칙:
 - 위 필드로 표현 불가한 질문(조기졸업 요건, 전과, 성적포기, 특정 과목, "이번 학기 안에"류 절대 시점)은 interpretable=false.
@@ -230,12 +234,21 @@ def apply_delta(ctx: StudentContext, delta: WhatIfDelta, profile,
     conv_ids = list(ctx.convergence_program_ids)
     conv_tracks = dict(ctx.convergence_tracks)
     conv_changes: list[str] = []
+    # '부전공으로 바꾸면' = LLM이 drop+add(동일 id) 또는 add(새 track)로 표현 → 트랙 변경으로
+    # 통합 해석(포기 아님). 기존엔 표현 불가라 drop만 나와 '다전공 포기'로 둔갑(2026-06-05 수정).
+    track_change_ids = {ch.program_id for ch in delta.add_convergence
+                        if ch.program_id in ctx.convergence_program_ids}
     for ch in delta.add_convergence:
         p = progs.get(ch.program_id)
+        name = p.get("name_ko", ch.program_id) if p else ch.program_id
         if ch.program_id in conv_ids:
-            # track 변경 시도(같은 id 재추가)와 일반 오류를 구분 — 오도 메시지 방지(코드R2)
-            return None, [], [], (f"'{p.get('name_ko', ch.program_id) if p else ch.program_id}'은(는) 이미 신청된 전공입니다 "
-                                  "— 다전공↔부전공 트랙 변경 시뮬레이션은 지원하지 않습니다.")
+            cur = conv_tracks.get(ch.program_id, "다전공")
+            if cur == ch.track:
+                assumptions.append(f"'{name}'은 이미 {cur} 트랙입니다 — 트랙 변경 없음")
+                continue
+            conv_tracks[ch.program_id] = ch.track
+            conv_changes.append(f"{name} 트랙 변경: {cur} → {ch.track}(시뮬레이션)")
+            continue
         if p is None or p.get("track_type", "primary") == "primary" or ch.program_id == ctx.program_id:
             return None, [], [], f"'{ch.program_id}'는 추가할 수 없는 융합·연계전공입니다."
         try:
@@ -244,8 +257,10 @@ def apply_delta(ctx: StudentContext, delta: WhatIfDelta, profile,
             return None, [], [], f"'{ch.program_id}' 교육과정 데이터가 없어 시뮬레이션이 불가합니다."
         conv_ids.append(ch.program_id)
         conv_tracks[ch.program_id] = ch.track
-        conv_changes.append(f"{p.get('name_ko', ch.program_id)}({ch.track}) 추가")
+        conv_changes.append(f"{name}({ch.track}) 추가")
     for pid in delta.drop_convergence:
+        if pid in track_change_ids:
+            continue                                  # drop+add 동일 id = 트랙 변경 — 포기로 처리 금지
         if pid not in conv_ids:
             return None, [], [], f"'{pid}'는 현재 신청하지 않은 융합·연계전공입니다."
         conv_ids.remove(pid)
@@ -330,7 +345,13 @@ def build_diff(before: AuditPipelineResponse, after: AuditPipelineResponse,
                    (f" (리스크 {before.risk.grade}→{after.risk.grade})." if risk_changed else ".")
     elif met_a and not met_b:
         # "에도"는 '변경 전에도 충족'으로 오독됨(이 분기는 정의상 전엔 미충족) — 코드R3-③
-        headline = "변경 후에는 추가 수강 없이 졸업요건을 충족합니다."
+        # 졸업인증제 경고가 after에 살아 있으면 '추가 수강 없이 충족' 단정 금지 — 다전공 제거
+        # 상담이 인증제(심화 +18)를 두고 '빼도 된다'로 읽히는 모순(검증 캠페인 codex④, 2026-06-05)
+        if any(getattr(r, "factor", "") == "졸업인증제" for r in (after.risk.reasons or [])):
+            headline = ("총학점·영역 요건은 충족하지만, 다·부전공이 없으면 졸업인증제에 따라 "
+                        "심화전공(전공최저+18학점) 충족이 추가로 필요합니다 — 아래 안내를 확인하세요.")
+        else:
+            headline = "변경 후에는 추가 수강 없이 졸업요건을 충족합니다."
     elif risk_changed:
         headline = f"리스크 등급이 {before.risk.grade}({before.risk.label}) → {after.risk.grade}({after.risk.label})로 변동합니다."
     elif conv_changes:
@@ -370,7 +391,16 @@ def suggest_next_actions(diff: WhatIfDiff, delta: WhatIfDelta,
     if overflow_resolved:
         acts.append("이 변경으로 초과학기가 해소됩니다 — 수강신청 시 개설학기를 꼭 확인하세요.")
     if delta.drop_convergence:
-        acts.append("융합·연계전공 포기 시 학위 표기가 달라집니다 — 포기 절차·시점을 학과사무실에 확인하세요.")
+        # 인증제 문구는 '변경 후 다·부전공이 하나도 안 남을 때만' — 부전공 전환(drop+add)처럼
+        # 트랙이 남는 변경에 심화전공 문구가 고정 출력되던 오안내 수정(사용자 보고 2026-06-05)
+        after_conv = ((set(ctx.convergence_program_ids or []) - set(delta.drop_convergence or []))
+                      | {c.program_id for c in (delta.add_convergence or [])})
+        if after_conv:
+            acts.append("융합·연계전공 변경 시 학위 표기가 달라집니다 — 변경 절차·시점을 학과사무실에 확인하세요.")
+        else:
+            acts.append("융합·연계전공 포기 시 학위 표기가 달라지고, 다·부전공이 없으면 졸업인증제(제96조의2)에 "
+                        "따라 심화전공(전공최저+18학점) 충족이 필요합니다 — 포기 절차와 면제 전형 여부를 "
+                        "학과사무실에 확인하세요.")
     if delta.add_convergence:
         acts.append("다전공·부전공은 신청 기간과 승인 요건이 있습니다 — 모집 공지를 확인하세요.")
     if (delta.calendar_delay_terms or 0) > 0:
@@ -391,8 +421,9 @@ def suggest_next_actions(diff: WhatIfDiff, delta: WhatIfDelta,
 
 
 # ---------- 캐시 (LLM 해석 결과만 — ②~⑤는 매번 결정론 재계산) ----------
-CACHE_SCHEMA_VERSION = 3          # 형식 변경·프롬프트 가드 변경 시 +1 — 구 엔트리 자동 미스
+CACHE_SCHEMA_VERSION = 4          # 형식 변경·프롬프트 가드 변경 시 +1 — 구 엔트리 자동 미스
                                   # (v3: 환각 융합변경 semantic guard 도입 — 코드R3)
+                                  # (v4: 트랙 변경 지원 — add enum에 선언 전공 포함·프롬프트 예시 추가)
 
 
 def _cache_key(model: str, question: str, ctx: StudentContext, add_ids: list[str]) -> str:
