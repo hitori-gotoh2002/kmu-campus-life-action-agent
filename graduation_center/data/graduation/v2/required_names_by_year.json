@@ -1,0 +1,725 @@
+{
+  "_source": "학번(입학연도)별 요람 교과과정 비고 필수 — 이름 기준(코드 무관). 2023=2023요람 p739-740, 2025=2025요람 p772-773 | ai_bigdata=학과 공식 졸업요건 시트(2022~2025_big_graduate.pdf): 2022~2024 필수 11(유레카 제외·택1그룹 포함), 2025 필수 12. 개설학기는 요람 교과과정표.",
+  "programs": {
+    "mirae_mobility": {
+      "2023": [
+        {
+          "name": "일반물리Ⅰ",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "일반물리실험Ⅰ",
+          "credits": 1,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "S-TEAM Class",
+          "credits": 1,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "공학기초수학",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "Python프로그래밍",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "미래모빌리티기초",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "공학수학Ⅰ",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "정역학",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "일반물리Ⅱ",
+          "credits": 2,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "일반물리실험Ⅱ",
+          "credits": 1,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "미래모빌리티AD",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "기초선형대수",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "회로이론",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "확률및통계",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "동역학",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "자료구조및알고리즘",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "전자회로",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "미래모빌리티실험",
+          "credits": 2,
+          "terms": [
+            "2"
+          ]
+        },
+        "다학제간캡스톤디자인"
+      ],
+      "2025": [
+        "S-TEAM Class",
+        "일반물리Ⅰ",
+        "일반물리실험Ⅰ",
+        "공학기초수학",
+        "Python프로그래밍",
+        "자동차모빌리티기초",
+        "일반물리Ⅱ",
+        "일반물리실험Ⅱ",
+        "공학수학Ⅰ",
+        "정역학",
+        "자동차모빌리티 Adventure Design",
+        "기초선형대수",
+        "회로이론",
+        "확률및통계",
+        "동역학",
+        "전자회로",
+        "자료구조및알고리즘",
+        "모빌리티실험및실습",
+        "다학제간캡스톤디자인"
+      ]
+    },
+    "ai_bigdata": {
+      "2022": [
+        {
+          "name": "현대경영과기업가정신",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "경영통계",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "회계학원론",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "경영정보학원론",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "인공지능수학",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "AI빅데이터프로그래밍Ⅰ",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "AI빅데이터프로그래밍Ⅱ",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "회귀분석",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "머신러닝",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "딥러닝",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        }
+      ],
+      "2025": [
+        {
+          "name": "현대경영과기업가정신",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "경영통계",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "회계학원론",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "경영정보학원론",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "인공지능수학",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "AI빅데이터프로그래밍Ⅰ",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "AI빅데이터프로그래밍Ⅱ",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "회귀분석",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "머신러닝",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "딥러닝",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "유레카프로젝트",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        }
+      ],
+      "2023": [
+        {
+          "name": "현대경영과기업가정신",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "경영통계",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "회계학원론",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "경영정보학원론",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "인공지능수학",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "AI빅데이터프로그래밍Ⅰ",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "AI빅데이터프로그래밍Ⅱ",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "회귀분석",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "머신러닝",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "딥러닝",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        }
+      ],
+      "2024": [
+        {
+          "name": "현대경영과기업가정신",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "경영통계",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "회계학원론",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "경영정보학원론",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "인공지능수학",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "AI빅데이터프로그래밍Ⅰ",
+          "credits": 3,
+          "terms": [
+            "1"
+          ]
+        },
+        {
+          "name": "AI빅데이터프로그래밍Ⅱ",
+          "credits": 3,
+          "terms": [
+            "2"
+          ]
+        },
+        {
+          "name": "회귀분석",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "머신러닝",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "딥러닝",
+          "credits": 3,
+          "terms": [
+            "1",
+            "2"
+          ]
+        }
+      ],
+      "2019": [
+        "현대경영과기업가정신",
+        "경제학개론",
+        "경영통계",
+        "회계학원론",
+        "경영수학",
+        "경영정보학원론",
+        "분석프로그래밍Ⅰ",
+        "데이터모델링과SQL",
+        "회귀분석",
+        "데이터마이닝"
+      ]
+    }
+  },
+  "aliases": {
+    "mirae_mobility": {
+      "미래모빌리티실험": [
+        "모빌리티실험및실습"
+      ],
+      "미래모빌리티기초": [
+        "자동차모빌리티기초"
+      ],
+      "미래모빌리티AD": [
+        "자동차모빌리티 Adventure Design"
+      ]
+    },
+    "ai_bigdata": {
+      "인공지능수학": [
+        "경영수학"
+      ],
+      "머신러닝": [
+        "데이터마이닝"
+      ],
+      "분석프로그래밍Ⅰ": [
+        "AI빅데이터프로그래밍Ⅰ"
+      ],
+      "분석프로그래밍Ⅱ": [
+        "AI빅데이터프로그래밍Ⅱ"
+      ],
+      "데이터모델링과SQL": [
+        "데이터베이스와SQL"
+      ],
+      "데이터마이닝": [
+        "머신러닝"
+      ],
+      "경영수학": [
+        "인공지능수학"
+      ],
+      "딥러닝과인공지능": [
+        "딥러닝"
+      ],
+      "빅데이터와시각화": [
+        "빅데이터처리와시각화"
+      ],
+      "빅데이터프로젝트:캡스톤디자인Ⅰ": [
+        "캡스톤디자인Ⅰ"
+      ],
+      "빅데이터프로젝트:캡스톤디자인Ⅱ": [
+        "캡스톤디자인Ⅱ"
+      ]
+    }
+  },
+  "_aliases_note": "요람 명칭↔수강내역 명칭 드리프트(동일 교과목코드). 요람엔 코드가 없어 이름 매칭 보정용.",
+  "gen_basic": {
+    "mirae_mobility": {
+      "2023": [
+        "College English",
+        "글로벌영어",
+        "English Conversation",
+        "글쓰기"
+      ],
+      "2025": [
+        "College English",
+        "English Conversation",
+        "글쓰기"
+      ]
+    },
+    "ai_bigdata": {
+      "2022": [
+        "글쓰기",
+        {
+          "any_of": [
+            "College EnglishⅠ",
+            "College EnglishⅡ",
+            "College English"
+          ],
+          "label": "College EnglishⅠ·Ⅱ 중 택1"
+        },
+        "English Conversation"
+      ],
+      "2023": [
+        "글쓰기",
+        {
+          "any_of": [
+            "College EnglishⅠ",
+            "College EnglishⅡ",
+            "College English"
+          ],
+          "label": "College EnglishⅠ·Ⅱ 중 택1"
+        },
+        "English Conversation"
+      ],
+      "2024": [
+        "글쓰기",
+        {
+          "any_of": [
+            "College EnglishⅠ",
+            "College EnglishⅡ",
+            "College English"
+          ],
+          "label": "College EnglishⅠ·Ⅱ 중 택1"
+        },
+        "English Conversation"
+      ],
+      "2025": [
+        "글쓰기",
+        {
+          "any_of": [
+            "College EnglishⅠ",
+            "College EnglishⅡ",
+            "College English"
+          ],
+          "label": "College EnglishⅠ·Ⅱ 중 택1"
+        },
+        "English Conversation"
+      ],
+      "2019": [
+        "글쓰기",
+        "English ReadingⅠ",
+        {
+          "any_of": [
+            "English ConversationⅠ",
+            "English ConversationⅡ",
+            "English Conversation(Advanced)",
+            "English Conversation"
+          ],
+          "label": "English ConversationⅠ·Ⅱ·Advanced 중 택1"
+        },
+        "글로벌영어",
+        "컴퓨터프로그래밍1",
+        "컴퓨터프로그래밍2"
+      ]
+    }
+  },
+  "_gen_basic_note": "학번 요람 기초교양 필수 과목명(택1 포함). 학생 수강내역 기초교양 과목명과 부분일치로 이수 판정. 항목이 dict(any_of)면 멤버 중 1개 이수 시 충족(택1). 글로벌영어 필수지정 해지는 전 학번 공통(일괄 적용 — 연도분기 안 함, 2026-06 확인). 기초교양 최저학점(8/7)은 시트 그대로.",
+  "_required_format": "값은 [문자열] 또는 [{name,credits,terms}] 모두 허용. terms=개설학기(['1'],['2'],['1','2']).",
+  "required_groups": {
+    "ai_bigdata": {
+      "2022": [
+        {
+          "label": "S-TEAM Class·사제동행세미나 중 택1",
+          "items": [
+            {
+              "name": "S-TEAM Class",
+              "credits": 1,
+              "terms": [
+                "1"
+              ]
+            },
+            {
+              "name": "사제동행세미나",
+              "credits": 1,
+              "terms": [
+                "1",
+                "2"
+              ]
+            }
+          ]
+        }
+      ],
+      "2023": [
+        {
+          "label": "S-TEAM Class·사제동행세미나 중 택1",
+          "items": [
+            {
+              "name": "S-TEAM Class",
+              "credits": 1,
+              "terms": [
+                "1"
+              ]
+            },
+            {
+              "name": "사제동행세미나",
+              "credits": 1,
+              "terms": [
+                "1",
+                "2"
+              ]
+            }
+          ]
+        }
+      ],
+      "2024": [
+        {
+          "label": "S-TEAM Class·사제동행세미나 중 택1",
+          "items": [
+            {
+              "name": "S-TEAM Class",
+              "credits": 1,
+              "terms": [
+                "1"
+              ]
+            },
+            {
+              "name": "사제동행세미나",
+              "credits": 1,
+              "terms": [
+                "1",
+                "2"
+              ]
+            }
+          ]
+        }
+      ],
+      "2019": [
+        {
+          "label": "S-TEAM Class·사제동행세미나 중 택1",
+          "items": [
+            {
+              "name": "S-TEAM Class",
+              "credits": 1
+            },
+            {
+              "name": "사제동행세미나",
+              "credits": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "_required_groups_note": "choose-1 필수 그룹(시트 각주 'S-TEAM Class 미이수 시 사제동행세미나 이수'). 그룹 중 1개 이수 시 충족.",
+  "renamed_to": {
+    "ai_bigdata": {
+      "분석프로그래밍Ⅰ": "AI빅데이터프로그래밍Ⅰ",
+      "분석프로그래밍Ⅱ": "AI빅데이터프로그래밍Ⅱ",
+      "데이터모델링과SQL": "데이터베이스와SQL",
+      "데이터마이닝": "머신러닝",
+      "경영수학": "인공지능수학",
+      "딥러닝과인공지능": "딥러닝",
+      "빅데이터와시각화": "빅데이터처리와시각화",
+      "빅데이터프로젝트:캡스톤디자인Ⅰ": "캡스톤디자인Ⅰ",
+      "빅데이터프로젝트:캡스톤디자인Ⅱ": "캡스톤디자인Ⅱ"
+    }
+  }
+}

@@ -1,0 +1,903 @@
+{
+  "program_id": "mirae_mobility",
+  "department_name_ko": "미래모빌리티학과",
+  "group_rules": null,
+  "requirements_key": "자동차융합대학_미래모빌리티학과",
+  "track_type": "primary",
+  "convergence_required": null,
+  "yoram": {
+    "doc": "2025 국민대학교 요람",
+    "page": 772
+  },
+  "courses": [
+    {
+      "course_id": "0118810",
+      "name_ko": "일반물리실험I",
+      "name_norm": "일반물리실험1",
+      "aliases": [],
+      "credits": 1.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0119410",
+      "name_ko": "일반물리I",
+      "name_norm": "일반물리1",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0533411",
+      "name_ko": "공학기초수학",
+      "name_norm": "공학기초수학",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0547210",
+      "name_ko": "Python프로그래밍",
+      "name_norm": "python프로그래밍",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0733010",
+      "name_ko": "자동차모빌리티기초",
+      "name_norm": "자동차모빌리티기초",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1621601",
+      "name_ko": "S-TEAM Class",
+      "name_norm": "steamclass",
+      "aliases": [],
+      "credits": 1.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0053010",
+      "name_ko": "정역학",
+      "name_norm": "정역학",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0156810",
+      "name_ko": "C프로그래밍",
+      "name_norm": "c프로그래밍",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0533010",
+      "name_ko": "공학수학Ⅰ",
+      "name_norm": "공학수학1",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [
+        "0533411"
+      ],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0533710",
+      "name_ko": "일반물리II",
+      "name_norm": "일반물리2",
+      "aliases": [],
+      "credits": 2.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0533910",
+      "name_ko": "일반물리실험II",
+      "name_norm": "일반물리실험2",
+      "aliases": [],
+      "credits": 1.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0590915",
+      "name_ko": "자동차모빌리티 Adventure Design",
+      "name_norm": "자동차모빌리티adventuredesign",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0056110",
+      "name_ko": "회로이론",
+      "name_norm": "회로이론",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0579207",
+      "name_ko": "고체역학",
+      "name_norm": "고체역학",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1152701",
+      "name_ko": "객체지향프로그래밍",
+      "name_norm": "객체지향프로그래밍",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1620901",
+      "name_ko": "기초선형대수",
+      "name_norm": "기초선형대수",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1621002",
+      "name_ko": "모빌리티계획및정책",
+      "name_norm": "모빌리티계획및정책",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0579306",
+      "name_ko": "동역학",
+      "name_norm": "동역학",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0624509",
+      "name_ko": "확률및통계",
+      "name_norm": "확률및통계",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1027102",
+      "name_ko": "전자회로",
+      "name_norm": "전자회로",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1152803",
+      "name_ko": "자료구조및알고리즘",
+      "name_norm": "자료구조및알고리즘",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1568903",
+      "name_ko": "자동차인공지능",
+      "name_norm": "자동차인공지능",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1621102",
+      "name_ko": "모빌리티실험및실습",
+      "name_norm": "모빌리티실험및실습",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0052811",
+      "name_ko": "자동제어",
+      "name_norm": "자동제어",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1241502",
+      "name_ko": "컴퓨터구조및실시간운영체제",
+      "name_norm": "컴퓨터구조및실시간운영체제",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1621902",
+      "name_ko": "모빌리티역학",
+      "name_norm": "모빌리티역학",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1622001",
+      "name_ko": "신호처리",
+      "name_norm": "신호처리",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1027302",
+      "name_ko": "마이크로프로세서응용",
+      "name_norm": "마이크로프로세서응용",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1241601",
+      "name_ko": "통신공학",
+      "name_norm": "통신공학",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1622201",
+      "name_ko": "미래모빌리티제어시스템",
+      "name_norm": "미래모빌리티제어시스템",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1621602",
+      "name_ko": "사제동행세미나",
+      "name_norm": "사제동행세미나",
+      "aliases": [],
+      "credits": 1.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0693316",
+      "name_ko": "다학제간캡스톤디자인",
+      "name_norm": "다학제간캡스톤디자인",
+      "aliases": [],
+      "credits": 4.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1326201",
+      "name_ko": "컴퓨터비전",
+      "name_norm": "컴퓨터비전",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1621202",
+      "name_ko": "모빌리티사이버보안",
+      "name_norm": "모빌리티사이버보안",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1621301",
+      "name_ko": "지능형교통체계",
+      "name_norm": "지능형교통체계",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1622301",
+      "name_ko": "로봇공학",
+      "name_norm": "로봇공학",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1622402",
+      "name_ko": "UROP I",
+      "name_norm": "urop1",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1622502",
+      "name_ko": "UROP I+",
+      "name_norm": "uropi",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "7159803",
+      "name_ko": "다학제간캡스톤디자인+",
+      "name_norm": "다학제간캡스톤디자인",
+      "aliases": [],
+      "credits": 4.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "0906103",
+      "name_ko": "모터이론및제어",
+      "name_norm": "모터이론및제어",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1621402",
+      "name_ko": "모빌리티운영",
+      "name_norm": "모빌리티운영",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1621501",
+      "name_ko": "대도심모빌리티시스템디자인",
+      "name_norm": "대도심모빌리티시스템디자인",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1622602",
+      "name_ko": "UROP II",
+      "name_norm": "urop2",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    },
+    {
+      "course_id": "1622702",
+      "name_ko": "UROP II+",
+      "name_norm": "uropii",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "미래모빌리티학과"
+      }
+    }
+  ]
+}

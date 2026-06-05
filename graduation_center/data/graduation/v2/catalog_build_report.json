@@ -1,0 +1,64 @@
+{
+  "gen_ed": {
+    "core_area_course_counts": {
+      "인문Ⅰ": 8,
+      "인문Ⅱ": 9,
+      "소통": 11,
+      "글로벌": 10,
+      "창의": 12
+    }
+  },
+  "ai_bigdata": {
+    "course_count": 39,
+    "duplicate_codes": [],
+    "code_conflicts": [],
+    "ambiguous_name_norm": {},
+    "required_marked": 10,
+    "unresolved_required": [],
+    "ambiguous_override": [],
+    "unresolved_prereq": [],
+    "group_unmatched": [],
+    "grouped": 0
+  },
+  "mirae_mobility": {
+    "course_count": 44,
+    "duplicate_codes": [],
+    "code_conflicts": [],
+    "ambiguous_name_norm": {
+      "다학제간캡스톤디자인": [
+        "0693316",
+        "7159803"
+      ]
+    },
+    "required_marked": 19,
+    "unresolved_required": [],
+    "ambiguous_override": [],
+    "unresolved_prereq": [],
+    "group_unmatched": [],
+    "grouped": 0
+  },
+  "dsci_convergence": {
+    "course_count": 23,
+    "duplicate_codes": [],
+    "code_conflicts": [],
+    "ambiguous_name_norm": {},
+    "required_marked": 0,
+    "unresolved_required": [],
+    "ambiguous_override": [],
+    "unresolved_prereq": [],
+    "group_unmatched": [],
+    "grouped": 23
+  },
+  "mobility_data_convergence": {
+    "course_count": 26,
+    "duplicate_codes": [],
+    "code_conflicts": [],
+    "ambiguous_name_norm": {},
+    "required_marked": 0,
+    "unresolved_required": [],
+    "ambiguous_override": [],
+    "unresolved_prereq": [],
+    "group_unmatched": [],
+    "grouped": 26
+  }
+}

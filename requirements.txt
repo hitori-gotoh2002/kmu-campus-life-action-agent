@@ -4,6 +4,10 @@ beautifulsoup4>=4.12.0
 pdfplumber>=0.11.0
 pypdfium2>=4.30.0
 
+# === 졸업진단: 수강신청내역 엑셀 파싱(.xlsx/.xls) ===
+openpyxl>=3.1.0
+xlrd>=2.0.1
+
 # === 스키마 강제 / 구조화 출력 ===
 pydantic>=2.6.0
 

@@ -1,0 +1,10 @@
+{
+  "_comment": "근거 클릭 → 원문 링크(2026-06-05). PDF 직링크는 암호화 파라미터라 재업로드 시 변동 가능 — 깨지면 index로 폴백",
+  "yoram_index": "https://www.kookmin.ac.kr/user/unIntr/unSttu/pdfCmmn/cradle/index.do",
+  "yoram_pdf": {
+    "2025": "https://www.kookmin.ac.kr/comm/cmfile/thumbnail2.do?encSvrFileNm=223d2bdfdbb4df30ad85271267bd6e6a5e43e6c3286a3d2e0b50d97ce4ef909fd4c1b852e03094309ff2a7575123171bb6010807921f1c621948ea82e1ff96fa40bbcb178d3151db4d507c693a1f7ef9&encFileGrpSeq=33117be2d9f7867cfa0cfb9da9971d4c&encFileSeq=b6c0bbda7720eac2ff0da9dc05793961",
+    "2023": "https://www.kookmin.ac.kr/comm/cmfile/thumbnail2.do?encSvrFileNm=223d2bdfdbb4df30ad85271267bd6e6a6dd3112e934e30427162587a1d42d5f16a1c36a88b1fd9f4dee655c060188fface2617b64c9a6da895b4d1ee96d853b640bbcb178d3151db4d507c693a1f7ef9&encFileGrpSeq=8e8e9041def64eb5f7f8c21154bcff06&encFileSeq=303e6b946e2274914600dbca57f4993a",
+    "2022": "https://www.kookmin.ac.kr/comm/cmfile/thumbnail2.do?encSvrFileNm=223d2bdfdbb4df30ad85271267bd6e6a10e41c04bd2051509efa67d825522a98ddc88543adb3a5d1f21fdb1d04f4db5ccc5bcc919cc7499d4ea1f9ac566941a440bbcb178d3151db4d507c693a1f7ef9&encFileGrpSeq=e6ae123ef36fb86b7b379fff339bd5dc&encFileSeq=9aaab56fabd2cac94f2f6b5b23bb53af"
+  },
+  "rules": "https://rule.kookmin.ac.kr/lmxsrv/main/main.do"
+}

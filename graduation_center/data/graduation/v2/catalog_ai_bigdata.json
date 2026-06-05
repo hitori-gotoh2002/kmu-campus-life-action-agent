@@ -1,0 +1,836 @@
+{
+  "program_id": "ai_bigdata",
+  "department_name_ko": "AI빅데이터융합경영학과",
+  "group_rules": null,
+  "requirements_key": "경영대학_AI빅데이터",
+  "track_type": "primary",
+  "convergence_required": null,
+  "yoram": {
+    "doc": "2025 국민대학교 요람",
+    "page": 693
+  },
+  "courses": [
+    {
+      "course_id": "0029011",
+      "name_ko": "경영통계",
+      "name_norm": "경영통계",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0030011",
+      "name_ko": "현대경영과기업가정신",
+      "name_norm": "현대경영과기업가정신",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "003290F",
+      "name_ko": "경영정보학원론",
+      "name_norm": "경영정보학원론",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0039511",
+      "name_ko": "회계학원론",
+      "name_norm": "회계학원론",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0365007",
+      "name_ko": "S-TEAM Class",
+      "name_norm": "steamclass",
+      "aliases": [],
+      "credits": 1.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0910501",
+      "name_ko": "인공지능수학",
+      "name_norm": "인공지능수학",
+      "aliases": [
+        "경영수학"
+      ],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1566902",
+      "name_ko": "유레카프로젝트",
+      "name_norm": "유레카프로젝트",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "7188901",
+      "name_ko": "AI빅데이터프로그래밍Ⅰ",
+      "name_norm": "ai빅데이터프로그래밍1",
+      "aliases": [
+        "분석프로그래밍Ⅰ"
+      ],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "7189001",
+      "name_ko": "AI빅데이터프로그래밍Ⅱ",
+      "name_norm": "ai빅데이터프로그래밍2",
+      "aliases": [
+        "분석프로그래밍Ⅱ"
+      ],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0365008",
+      "name_ko": "사제동행세미나",
+      "name_norm": "사제동행세미나",
+      "aliases": [],
+      "credits": 1.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0407311",
+      "name_ko": "경제학개론",
+      "name_norm": "경제학개론",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1026304",
+      "name_ko": "빅데이터처리와시각화",
+      "name_norm": "빅데이터처리와시각화",
+      "aliases": [
+        "빅데이터와시각화"
+      ],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1140200",
+      "name_ko": "수리통계",
+      "name_norm": "수리통계",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [
+        "0029011"
+      ],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1242101",
+      "name_ko": "공간빅데이터분석",
+      "name_norm": "공간빅데이터분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과",
+        "note": "폐지 — 2026 개정(사용자 제공 2026-06-05) — 교과목코드 현황보다 최신"
+      },
+      "discontinued": true
+    },
+    {
+      "course_id": "1567001",
+      "name_ko": "AI개발환경의이해",
+      "name_norm": "ai개발환경의이해",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과",
+        "note": "2026 개정(사용자 제공 2026-06-05) — 교과목코드 현황보다 최신"
+      }
+    },
+    {
+      "course_id": "0155708",
+      "name_ko": "선형대수",
+      "name_norm": "선형대수",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1026501",
+      "name_ko": "경영데이터분석",
+      "name_norm": "경영데이터분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [
+        "0910501"
+      ],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1139401",
+      "name_ko": "데이터베이스와SQL",
+      "name_norm": "데이터베이스와sql",
+      "aliases": [
+        "데이터모델링과SQL"
+      ],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과",
+        "note": "2026 개정(사용자 제공 2026-06-05) — 교과목코드 현황보다 최신"
+      }
+    },
+    {
+      "course_id": "0589604",
+      "name_ko": "머신러닝",
+      "name_norm": "머신러닝",
+      "aliases": [
+        "데이터마이닝"
+      ],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1139301",
+      "name_ko": "회귀분석",
+      "name_norm": "회귀분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0030811",
+      "name_ko": "마케팅",
+      "name_norm": "마케팅",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0030911",
+      "name_ko": "생산운영관리",
+      "name_norm": "생산운영관리",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0031611",
+      "name_ko": "재무관리",
+      "name_norm": "재무관리",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0462910",
+      "name_ko": "디지털전환과e-비지니스",
+      "name_norm": "디지털전환과e비지니스",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1140301",
+      "name_ko": "텍스트데이터분석",
+      "name_norm": "텍스트데이터분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1619601",
+      "name_ko": "클라우드머신러닝",
+      "name_norm": "클라우드머신러닝",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1619701",
+      "name_ko": "데이터구조와알고리즘",
+      "name_norm": "데이터구조와알고리즘",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "0031109",
+      "name_ko": "마케팅조사",
+      "name_norm": "마케팅조사",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1139600",
+      "name_ko": "다변량통계분석",
+      "name_norm": "다변량통계분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [
+        "0029011"
+      ],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1619501",
+      "name_ko": "비즈니스통계응용",
+      "name_norm": "비즈니스통계응용",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1464601",
+      "name_ko": "딥러닝",
+      "name_norm": "딥러닝",
+      "aliases": [
+        "딥러닝과인공지능"
+      ],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": true,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1644301",
+      "name_ko": "기후빅데이터프로젝트:캡스톤디자인",
+      "name_norm": "기후빅데이터프로젝트캡스톤디자인",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1140503",
+      "name_ko": "베이지안모델링",
+      "name_norm": "베이지안모델링",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1619303",
+      "name_ko": "추천시스템과비즈니스",
+      "name_norm": "추천시스템과비즈니스",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1466903",
+      "name_ko": "AI빅데이터프로젝트:캡스톤디자인Ⅰ",
+      "name_norm": "ai빅데이터프로젝트캡스톤디자인1",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1619403",
+      "name_ko": "AI빅데이터프로젝트:캡스톤디자인Ⅱ",
+      "name_norm": "ai빅데이터프로젝트캡스톤디자인2",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1567202",
+      "name_ko": "대화형AI와비즈니스",
+      "name_norm": "대화형ai와비즈니스",
+      "aliases": [
+        "생성형AI와비즈니스"
+      ],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1567302",
+      "name_ko": "비전AI와비즈니스",
+      "name_norm": "비전ai와비즈니스",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    },
+    {
+      "course_id": "1619202",
+      "name_ko": "AI빅데이터세미나",
+      "name_norm": "ai빅데이터세미나",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "2"
+      ],
+      "group": null,
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "AI빅데이터융합경영학과"
+      }
+    }
+  ]
+}

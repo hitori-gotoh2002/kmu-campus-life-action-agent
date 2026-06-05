@@ -1,0 +1,556 @@
+{
+  "program_id": "mobility_data_convergence",
+  "department_name_ko": "모빌리티데이터분석융합전공",
+  "group_rules": {
+    "다전공": {
+      "total": 36,
+      "per_group_min": 12,
+      "double_cap": 12
+    },
+    "부전공": {
+      "total": 18,
+      "per_group_min": 6,
+      "double_cap": 6
+    }
+  },
+  "requirements_key": null,
+  "track_type": "convergence",
+  "convergence_required": 36,
+  "yoram": {
+    "doc": "2025 국민대학교 요람",
+    "page": 889
+  },
+  "courses": [
+    {
+      "course_id": "0029011",
+      "name_ko": "경영통계",
+      "name_norm": "경영통계",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "0547210",
+      "name_ko": "Python프로그래밍",
+      "name_norm": "python프로그래밍",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "0733010",
+      "name_ko": "자동차모빌리티기초",
+      "name_norm": "자동차모빌리티기초",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "7188901",
+      "name_ko": "AI빅데이터프로그래밍Ⅰ",
+      "name_norm": "ai빅데이터프로그래밍1",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "0156810",
+      "name_ko": "C프로그래밍",
+      "name_norm": "c프로그래밍",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1026304",
+      "name_ko": "빅데이터처리와시각화",
+      "name_norm": "빅데이터처리와시각화",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1152701",
+      "name_ko": "객체지향프로그래밍",
+      "name_norm": "객체지향프로그래밍",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1567001",
+      "name_ko": "AI개발환경의이해",
+      "name_norm": "ai개발환경의이해",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공",
+        "note": "2026 개정(사용자 제공 2026-06-05) — 교과목코드 현황보다 최신"
+      }
+    },
+    {
+      "course_id": "1620901",
+      "name_ko": "기초선형대수",
+      "name_norm": "기초선형대수",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1621002",
+      "name_ko": "모빌리티계획및정책",
+      "name_norm": "모빌리티계획및정책",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "0155708",
+      "name_ko": "선형대수",
+      "name_norm": "선형대수",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1139401",
+      "name_ko": "데이터베이스와SQL",
+      "name_norm": "데이터베이스와sql",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공",
+        "note": "2026 개정(사용자 제공 2026-06-05) — 교과목코드 현황보다 최신"
+      }
+    },
+    {
+      "course_id": "1152803",
+      "name_ko": "자료구조및알고리즘",
+      "name_norm": "자료구조및알고리즘",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "0589604",
+      "name_ko": "머신러닝",
+      "name_norm": "머신러닝",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1139301",
+      "name_ko": "회귀분석",
+      "name_norm": "회귀분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1568903",
+      "name_ko": "자동차인공지능",
+      "name_norm": "자동차인공지능",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1621102",
+      "name_ko": "모빌리티실험및실습",
+      "name_norm": "모빌리티실험및실습",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "0052811",
+      "name_ko": "자동제어",
+      "name_norm": "자동제어",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1140301",
+      "name_ko": "텍스트데이터분석",
+      "name_norm": "텍스트데이터분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1241502",
+      "name_ko": "컴퓨터구조및실시간운영체제",
+      "name_norm": "컴퓨터구조및실시간운영체제",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1619701",
+      "name_ko": "데이터구조와알고리즘",
+      "name_norm": "데이터구조와알고리즘",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1464601",
+      "name_ko": "딥러닝",
+      "name_norm": "딥러닝",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1567202",
+      "name_ko": "대화형AI와비즈니스",
+      "name_norm": "대화형ai와비즈니스",
+      "aliases": [
+        "생성형AI와비즈니스"
+      ],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1621202",
+      "name_ko": "모빌리티사이버보안",
+      "name_norm": "모빌리티사이버보안",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1567302",
+      "name_ko": "비전AI와비즈니스",
+      "name_norm": "비전ai와비즈니스",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    },
+    {
+      "course_id": "1621402",
+      "name_ko": "모빌리티운영",
+      "name_norm": "모빌리티운영",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "모빌리티데이터분석융합전공"
+      }
+    }
+  ]
+}

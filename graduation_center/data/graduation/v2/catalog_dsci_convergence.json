@@ -1,0 +1,497 @@
+{
+  "program_id": "dsci_convergence",
+  "department_name_ko": "데이터사이언스융합전공",
+  "group_rules": {
+    "다전공": {
+      "total": 36,
+      "per_group_min": 12,
+      "double_cap": 12
+    },
+    "부전공": {
+      "total": 18,
+      "per_group_min": 6,
+      "double_cap": 6
+    }
+  },
+  "requirements_key": null,
+  "track_type": "convergence",
+  "convergence_required": 36,
+  "yoram": {
+    "doc": "2025 국민대학교 요람",
+    "page": 882
+  },
+  "courses": [
+    {
+      "course_id": "0029011",
+      "name_ko": "경영통계",
+      "name_norm": "경영통계",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "0156812",
+      "name_ko": "객체지향프로그래밍",
+      "name_norm": "객체지향프로그래밍",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1143704",
+      "name_ko": "소프트웨어적사고",
+      "name_norm": "소프트웨어적사고",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "0155707",
+      "name_ko": "선형대수",
+      "name_norm": "선형대수",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 1,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "0156405",
+      "name_ko": "자료구조",
+      "name_norm": "자료구조",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1026304",
+      "name_ko": "빅데이터처리와시각화",
+      "name_norm": "빅데이터처리와시각화",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "0401603",
+      "name_ko": "웹클라이언트컴퓨팅",
+      "name_norm": "웹클라이언트컴퓨팅",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1140200",
+      "name_ko": "수리통계",
+      "name_norm": "수리통계",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1242101",
+      "name_ko": "공간빅데이터분석",
+      "name_norm": "공간빅데이터분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공",
+        "note": "폐지 — 2026 개정(사용자 제공 2026-06-05) — 교과목코드 현황보다 최신"
+      },
+      "discontinued": true
+    },
+    {
+      "course_id": "1139401",
+      "name_ko": "데이터베이스와SQL",
+      "name_norm": "데이터베이스와sql",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 2,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공",
+        "note": "2026 개정(사용자 제공 2026-06-05) — 교과목코드 현황보다 최신"
+      }
+    },
+    {
+      "course_id": "0589604",
+      "name_ko": "머신러닝",
+      "name_norm": "머신러닝",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1139301",
+      "name_ko": "회귀분석",
+      "name_norm": "회귀분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1140301",
+      "name_ko": "텍스트데이터분석",
+      "name_norm": "텍스트데이터분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "0384403",
+      "name_ko": "알고리즘",
+      "name_norm": "알고리즘",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1139600",
+      "name_ko": "다변량통계분석",
+      "name_norm": "다변량통계분석",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1619501",
+      "name_ko": "비즈니스통계응용",
+      "name_norm": "비즈니스통계응용",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 3,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1464601",
+      "name_ko": "딥러닝",
+      "name_norm": "딥러닝",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1144400",
+      "name_ko": "비주얼컴퓨팅최신기술",
+      "name_norm": "비주얼컴퓨팅최신기술",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1145001",
+      "name_ko": "빅데이터최신기술",
+      "name_norm": "빅데이터최신기술",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "1"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "0158401",
+      "name_ko": "인공지능",
+      "name_norm": "인공지능",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1325001",
+      "name_ko": "클라우드컴퓨팅",
+      "name_norm": "클라우드컴퓨팅",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": null,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1466903",
+      "name_ko": "AI빅데이터프로젝트:캡스톤디자인Ⅰ",
+      "name_norm": "ai빅데이터프로젝트캡스톤디자인1",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "1",
+        "2"
+      ],
+      "group": "A그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    },
+    {
+      "course_id": "1325200",
+      "name_ko": "소프트웨어융합최신기술",
+      "name_norm": "소프트웨어융합최신기술",
+      "aliases": [],
+      "credits": 3.0,
+      "requirement_area": "융합전공",
+      "is_required": false,
+      "prerequisites": [],
+      "prereq_external": [],
+      "grade_level": 4,
+      "offered_terms": [
+        "2"
+      ],
+      "group": "B그룹",
+      "source": {
+        "doc": "2025-2 교육과정 교과목코드 현황",
+        "dept": "데이터사이언스융합전공"
+      }
+    }
+  ]
+}

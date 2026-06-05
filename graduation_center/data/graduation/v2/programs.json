@@ -1,0 +1,36 @@
+{
+  "programs": {
+    "ai_bigdata": {
+      "name_ko": "AI빅데이터융합경영학과",
+      "requirements_key": "경영대학_AI빅데이터",
+      "catalog_file": "catalog_ai_bigdata.json",
+      "yoram_page": 693,
+      "track_type": "primary",
+      "convergence_required": null
+    },
+    "mirae_mobility": {
+      "name_ko": "미래모빌리티학과",
+      "requirements_key": "자동차융합대학_미래모빌리티학과",
+      "catalog_file": "catalog_mirae_mobility.json",
+      "yoram_page": 772,
+      "track_type": "primary",
+      "convergence_required": null
+    },
+    "dsci_convergence": {
+      "name_ko": "데이터사이언스융합전공",
+      "requirements_key": null,
+      "catalog_file": "catalog_dsci_convergence.json",
+      "yoram_page": 882,
+      "track_type": "convergence",
+      "convergence_required": 36
+    },
+    "mobility_data_convergence": {
+      "name_ko": "모빌리티데이터분석융합전공",
+      "requirements_key": null,
+      "catalog_file": "catalog_mobility_data_convergence.json",
+      "yoram_page": 889,
+      "track_type": "convergence",
+      "convergence_required": 36
+    }
+  }
+}
