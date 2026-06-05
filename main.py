@@ -13,6 +13,8 @@
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import sys
 
@@ -29,7 +31,7 @@ except ImportError:
 
 from modules import (scraper, document_ai, analyzer, validator, executor,
                      profile, classifier, history, preferences, digest,
-                     deadline, feedback, store)
+                     deadline, feedback, store, timetable)
 
 store.load_keys_into_env()   # 웹에서 저장한 API 키도 CLI 에서 사용
 
@@ -38,6 +40,41 @@ def banner(text: str) -> None:
     print("\n" + "=" * 56)
     print(f"  {text}")
     print("=" * 56)
+
+
+_CONTEXT_SIGNATURE_KEY = "recommendation_context_signature"
+
+
+def _recommendation_context_signature(ctx: dict) -> str:
+    """추천 기준 변경 감지용 서명.
+
+    시간표와 졸업진단 연동값은 기존 추천의 적합도/가용시간 판단을 바꿀 수 있으므로,
+    이 값이 바뀌면 증분 스킵 대신 전체 재분석을 한 번 수행한다.
+    """
+    payload = {
+        "profile": ctx,
+        "timetable_rows": timetable.load().get("rows", []),
+    }
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _context_change_status(ctx: dict) -> tuple[bool, str, str]:
+    if not history.enabled():
+        return False, "", "데모 모드"
+    signature = _recommendation_context_signature(ctx)
+    saved = store.kv_get(_CONTEXT_SIGNATURE_KEY) or {}
+    previous = saved.get("signature") if isinstance(saved, dict) else str(saved or "")
+    if not previous:
+        return True, signature, "추천 기준 최초 기록"
+    if previous != signature:
+        return True, signature, "프로필/졸업진단/시간표 변경 감지"
+    return False, signature, "추천 기준 변경 없음"
+
+
+def _save_context_signature(signature: str) -> None:
+    if history.enabled() and signature:
+        store.kv_set(_CONTEXT_SIGNATURE_KEY, {"signature": signature})
 
 
 def _make_candidate(n, result, validation: dict, fb: dict, warning: str = "") -> dict:
@@ -264,10 +301,15 @@ def refresh_recommendations(force_reanalysis: bool = False) -> list:
     if not allowed:
         print("추천 주기가 '끄기'가 아닌 분야가 없습니다. 재분석을 종료합니다.")
         return []
-    mode_label = "전체 재분석" if force_reanalysis else "증분 분석(신규/변경 공지만)"
+    context_changed, context_signature, context_reason = _context_change_status(ctx)
+    effective_force = force_reanalysis or context_changed
+    if context_changed:
+        print(f"추천 기준 변경: {context_reason} → 기존 추천도 다시 분석합니다.")
+    mode_label = "전체 재분석" if effective_force else "증분 분석(신규/변경 공지만)"
     print(f"수동 새로고침 분석 방식: {mode_label}")
     print("수동 새로고침 분석 분야: " + ", ".join(sorted(allowed)))
-    candidates = _gather_candidates(ctx, force_reanalysis=force_reanalysis, allowed_categories=allowed)
+    candidates = _gather_candidates(ctx, force_reanalysis=effective_force, allowed_categories=allowed)
+    _save_context_signature(context_signature)
     banner("웹 추천 새로고침 완료")
     print(f"추천 후보 {len(candidates)}건")
     return candidates
@@ -338,6 +380,10 @@ def digest_run() -> None:
         print("오늘 자동수신 주기에 해당하는 분야가 없습니다. 종료.")
         return
     print("오늘 자동 업데이트 분야: " + ", ".join(sorted(due)))
+    context_changed, context_signature, context_reason = _context_change_status(ctx)
+    effective_force = context_changed
+    if context_changed:
+        print(f"추천 기준 변경: {context_reason} → 기존 추천도 다시 분석합니다.")
 
     prefs = preferences.load_preferences()
     telegram_due = {
@@ -350,13 +396,15 @@ def digest_run() -> None:
     # Telegram delivery should not wait for all web-only categories to finish.
     if telegram_due:
         print("텔레그램 우선 분석 분야: " + ", ".join(sorted(telegram_due)))
-        tg_candidates = _gather_candidates(ctx, allowed_categories=telegram_due)
+        tg_candidates = _gather_candidates(ctx, force_reanalysis=effective_force, allowed_categories=telegram_due)
         candidates.extend(tg_candidates)
         digest.deliver(tg_candidates, ctx)
 
     if web_due:
         print("웹 추천함 업데이트 분야: " + ", ".join(sorted(web_due)))
-        candidates.extend(_gather_candidates(ctx, allowed_categories=web_due))
+        candidates.extend(_gather_candidates(ctx, force_reanalysis=effective_force, allowed_categories=web_due))
+
+    _save_context_signature(context_signature)
 
     banner("분야별 추천서 (Digest)")
     if not candidates:
