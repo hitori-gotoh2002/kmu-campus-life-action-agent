@@ -1,8 +1,8 @@
 """졸업 진단 — 수강신청내역(엑셀) 업로드 → 사용자 검증(HITL) → 결정론 졸업사정.
 
-성적증명서(비전) 대신 ON국민 '수강내역(수강신청확인서)' 엑셀을 학기별로 올린다.
+ON국민 '수강내역(수강신청확인서)' 엑셀을 학기별로 올린다.
 graduation_center.v2 결정론 파이프라인(과목코드 매칭·갭감사·로드맵·리스크)을 사용한다.
-성적·GPA는 엑셀에 없으므로 졸업평점 충족 여부 등은 사용자가 직접 선언한다.
+성적·GPA는 수강내역 엑셀에 없으므로 졸업평점 충족 여부 등은 사용자가 직접 선언한다.
 """
 import os
 
@@ -27,6 +27,13 @@ PROGRAMS = graduation_link.load_programs()
 PRIMARY = {k: v for k, v in PROGRAMS.items() if v.get("track_type") == "primary"}
 CONV = {k: v for k, v in PROGRAMS.items() if v.get("track_type") == "convergence"}
 AREAS = ["전공", "기초교양", "핵심교양", "자유교양", "일반선택", "융합전공"]
+
+
+def editor_rows(value) -> list[dict]:
+    """st.data_editor 반환값을 Streamlit 버전과 무관하게 row dict list로 정규화."""
+    if hasattr(value, "to_dict"):
+        return value.to_dict("records")
+    return list(value or [])
 
 # 새로고침해도 유지 — 백엔드(store)에서 복원
 for key in ("grad_verify", "grad_audit"):
@@ -150,7 +157,7 @@ if "grad_verify" in st.session_state:
         "🧠 AI 규정 해설·총평 켜기 (요람 RAG·OpenAI 사용)", value=False,
         help="끄면 결정론 진단만(빠르고 무료). 켜면 요람 원문 근거 규정해설과 시나리오 기반 에이전트 총평을 리포트에 추가합니다.")
     if st.button("✅ 졸업 진단 실행", type="primary", use_container_width=True):
-        for i, r in enumerate(edited):
+        for i, r in enumerate(editor_rows(edited)):
             if i < len(table):
                 table[i]["included"] = bool(r["포함"])
                 table[i]["requirement_area"] = r["이수구분"]

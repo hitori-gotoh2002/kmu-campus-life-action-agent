@@ -14,6 +14,11 @@
 from __future__ import annotations
 
 import os
+import sys
+
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 # .env 로드 (python-dotenv 없으면 무시)
 try:
@@ -250,9 +255,6 @@ def refresh_recommendations(force_reanalysis: bool = True) -> list:
         print("추천 주기가 '끄기'가 아닌 분야가 없습니다. 재분석을 종료합니다.")
         return []
     print("수동 새로고침 분석 분야: " + ", ".join(sorted(allowed)))
-    if force_reanalysis and history.enabled():
-        reset = history.reset_pending()
-        print(f"이전 검토대기 {reset}건을 재분석 전 보류 처리")
     candidates = _gather_candidates(ctx, force_reanalysis=force_reanalysis, allowed_categories=allowed)
     banner("웹 추천 새로고침 완료")
     print(f"추천 후보 {len(candidates)}건")

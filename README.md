@@ -1,7 +1,7 @@
 # KMU 캠퍼스 라이프 에이전트
 
 국민대학교 AI빅데이터융합경영학과 학생을 기준으로 만든 맞춤형 캠퍼스·커리어 추천 웹앱입니다.  
-공지, 공모전, 대외활동, 장학금, 채용·인턴, 자격증, 학사일정을 매일 수집해 사용자의 포트폴리오, 시간표, 실제 일정, 졸업 상태를 바탕으로 추천합니다.
+공지, 공모전, 대외활동, 장학금, 채용·인턴, 자격증, 학사일정을 매일 수집해 사용자의 포트폴리오, 시간표, 실제 일정, 수강내역 기반 졸업 상태를 바탕으로 추천합니다.
 
 현재 운영 구조는 **Supabase 원격 DB + Streamlit 웹 + GitHub Actions 자동화 + Notion 캘린더 + Telegram 승인**입니다.
 
@@ -14,7 +14,7 @@
 - 텔레그램 승인: GitHub Actions가 5분마다 승인 버튼 확인
 - Notion 사용 범위: 실제 일정 캘린더, 포트폴리오 페이지
 - 시간표: Notion에 넣지 않고 웹 설정 페이지에서 PDF/표로 저장
-- 졸업 진단: 성적증명서 PDF 분석 결과를 추천 프로필에 반영
+- 졸업 진단: ON국민 수강내역 엑셀을 교과목코드로 매칭해 졸업요건을 진단하고 이수 완료 과목을 추천 프로필에 반영
 
 ## 빠른 실행
 
@@ -31,7 +31,7 @@ streamlit run app.py
 3. 분야별 자동수신 주기 선택
 4. `내 맞춤 추천함`에서 새로고침으로 추천 분석
 5. 필요한 추천은 `노션에 추가`, 필요 없는 추천은 `무시`
-6. `졸업 진단`에서 성적증명서 PDF 업로드 후 결과 확인
+6. `졸업 진단`에서 ON국민 수강내역 엑셀 업로드 후 결과 확인
 
 ## 운영 자동화
 
@@ -80,7 +80,7 @@ GitHub Variables는 서버에서 임시로 강제하고 싶을 때만 사용합�
 | 홈 | `app.py` | 프로필 요약, 추천함/졸업 진단 진입 |
 | 설정 | `pages/0_설정.py` | API 키, 시간표, 분야별 자동수신 설정 |
 | 내 맞춤 추천함 | `pages/1_내_맞춤_추천함.py` | 추천 누적 확인, 새로고침, 노션 추가, 무시 |
-| 졸업 진단 | `pages/2_졸업_진단.py` | 성적증명서 PDF 분석, 부족 학점 확인 |
+| 졸업 진단 | `pages/2_졸업_진단.py` | 수강내역 엑셀 검증, 졸업요건 진단, What-if 상담 |
 
 ## 핵심 모듈
 
@@ -97,6 +97,8 @@ GitHub Variables는 서버에서 임시로 강제하고 싶을 때만 사용합�
 | `modules/executor.py` | Notion 캘린더 일정 생성 |
 | `modules/timetable.py` | 시간표 PDF/표 저장 및 주간 수업시간 계산 |
 | `modules/academic_calendar.py` | 국민대 학사일정/시험기간 반영 |
+| `modules/graduation_link.py` | 졸업진단 결과를 추천 프로필로 연동 |
+| `graduation_center/v2/` | 수강내역 엑셀 파싱, 졸업사정, 로드맵, 리스크, RAG 해설 |
 
 ## 수집 소스
 
@@ -118,7 +120,7 @@ GitHub Variables는 서버에서 임시로 강제하고 싶을 때만 사용합�
 - 시간표 PDF에서 추출한 고정 수업 시간
 - Notion 캘린더의 실제 일정
 - 국민대 학사일정과 시험기간
-- 성적증명서 업로드 시 졸업 미충족 요건
+- 수강내역 엑셀 기반 졸업 미충족 요건과 이수 완료 과목
 - 마감일, 예상 필요 시간, 활동 분야 적합도
 - 사용자가 과거에 승인/무시한 피드백
 
@@ -152,6 +154,7 @@ GitHub Variables는 서버에서 임시로 강제하고 싶을 때만 사용합�
 - 텔레그램 승인 처리: `modules/telegram_callbacks.py`, `.github/workflows/telegram-callbacks.yml`
 - 원격 DB: `modules/store.py`, `docs/supabase_schema.sql`
 - 시간표/가용시간: `modules/timetable.py`, `modules/validator.py`, `modules/academic_calendar.py`
+- 졸업진단 v2: `pages/2_졸업_진단.py`, `modules/graduation_link.py`, `graduation_center/v2/`, `graduation_center/data/graduation/`
 
 주의할 점:
 

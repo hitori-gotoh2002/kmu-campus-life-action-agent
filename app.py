@@ -16,7 +16,7 @@ store.load_keys_into_env()   # 웹에서 저장한 API 키 적용
 st.set_page_config(page_title="KMU 캠퍼스 라이프 에이전트", page_icon="🎓", layout="centered")
 
 st.title("🎓 KMU 캠퍼스 라이프 에이전트")
-st.caption("포트폴리오·웹 시간표·성적·노션 실제 일정을 한데 모아 — 커리어 추천 + 졸업까지 도와줍니다.")
+st.caption("포트폴리오·웹 시간표·수강내역·노션 실제 일정을 한데 모아 — 커리어 추천 + 졸업까지 도와줍니다.")
 
 st.divider()
 c = st.columns(2)
@@ -27,8 +27,8 @@ with c[0]:
     st.page_link("pages/1_내_맞춤_추천함.py", label="내 맞춤 추천함 열기 →")
 with c[1]:
     st.subheader("🎓 졸업 진단")
-    st.write("성적증명서(PDF)를 올리면 이수학점을 분석해 졸업까지 부족한 학점을 진단하고, "
-             "그 결과를 추천에 반영합니다.")
+    st.write("ON국민 수강내역 엑셀을 올리면 교과목코드 기준으로 졸업요건 충족도를 진단하고, "
+             "이수 완료 과목을 추천 역량 신호로 반영합니다.")
     st.page_link("pages/2_졸업_진단.py", label="졸업 진단 열기 →")
 
 st.divider()
