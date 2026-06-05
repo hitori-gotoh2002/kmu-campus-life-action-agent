@@ -21,10 +21,12 @@ from graduation_center.v2.models_v2 import (
     Source, StudentContext,
 )
 
-CHROMA_DIR = "data/graduation/chroma"
+# 데이터는 패키지 내부에 동봉 — CWD 비의존(__file__ 기준 앵커링).
+_PKG_GRAD = Path(__file__).resolve().parents[1] / "data" / "graduation"
+CHROMA_DIR = str(_PKG_GRAD / "chroma")
 COLLECTION = "kmu_graduation_yoram"
 EMBEDDING_MODEL = "text-embedding-3-small"
-CACHE_PATH = Path("data/graduation/v2/explain_cache.json")
+CACHE_PATH = _PKG_GRAD / "v2" / "explain_cache.json"
 MAX_ITEMS = 3
 TOP_K = 4
 _STUDENT_ID = re.compile(r"\b(20\d{2})\d{4}\b")
@@ -285,7 +287,7 @@ def run_explain(audit: AuditResult, profile: RequirementProfile, ctx: StudentCon
                 client=None) -> tuple[list[ExplainSection], list[Source], list[NodeTraceEvent], str | None]:
     """반환: (sections, Y-sources, trace 2노드, fallback_reason)."""
     items = select_explain_items(audit, profile, ctx)
-    model = os.getenv("OPENAI_GRADUATION_MODEL", "gpt-5-mini")
+    model = os.getenv("OPENAI_GRADUATION_MODEL", "gpt-4o-mini")
 
     # skip/fail에도 '해설 검증' placeholder를 방출 — 없으면 그래프에서 리포트 노드가
     # lit 엣지 없이 고립됨(신규코드 검증 라운드: 키 없는 환경 재현)

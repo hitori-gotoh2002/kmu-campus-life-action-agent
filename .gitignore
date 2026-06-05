@@ -31,3 +31,8 @@ run_poll.bat
 # ===== 개인 업로드 자료 (성적증명서 등) =====
 uploads/
 *.성적증명서.pdf
+
+# 졸업진단 LLM 런타임 캐시(생성물)
+graduation_center/data/graduation/v2/*_cache.json
+graduation_center/data/graduation/index_stats.json
+graduation_center/data/graduation/chroma/*.sqlite3-*

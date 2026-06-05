@@ -41,6 +41,8 @@ KEY_NAMES = [
     "OPENAI_API_KEY", "OPENAI_MODEL", "NOTION_API_KEY",
     "NOTION_CALENDAR_DB_ID", "NOTION_PORTFOLIO_PAGE_ID",
     "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
+    # 졸업진단 RAG 규정해설·총평·what-if용 OpenAI 모델(미설정 시 코드 기본값)
+    "OPENAI_GRADUATION_MODEL",
 ]
 
 

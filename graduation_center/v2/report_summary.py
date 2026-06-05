@@ -27,7 +27,7 @@ from graduation_center.v2.whatif import (
     _candidates, apply_delta, build_diff, whatif_delta_schema,
 )
 
-CACHE_PATH = Path(__file__).resolve().parents[2] / "data/graduation/v2/summary_cache.json"
+CACHE_PATH = Path(__file__).resolve().parents[1] / "data/graduation/v2/summary_cache.json"
 SUMMARY_SCHEMA_VERSION = 7        # 프롬프트·schema·필터 규칙 변경 시 +1 — 구 엔트리 자동 미스
 MAX_CANDIDATES = 5                # LLM 제안 상한(Thought의 폭)
 MAX_SIMULATIONS = 4               # pre 통과 후보 시뮬레이션 상한(비용 가드)
@@ -433,7 +433,8 @@ def _get_client():
 
 def _model() -> str:
     import os
-    return os.getenv("GRADUATION_SUMMARY_MODEL") or os.getenv("GRADUATION_EXPLAIN_MODEL") or "gpt-5-mini"
+    return (os.getenv("GRADUATION_SUMMARY_MODEL") or os.getenv("OPENAI_GRADUATION_MODEL")
+            or os.getenv("GRADUATION_EXPLAIN_MODEL") or "gpt-4o-mini")
 
 
 def _llm_json(client, model: str, prompt: str, schema: dict, name: str) -> dict:

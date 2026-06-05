@@ -26,7 +26,7 @@ from graduation_center.v2.models_v2 import (
 from graduation_center.v2.pipeline import run_audit
 from graduation_center.v2.planner import _nth_regular_term
 
-CACHE_PATH = Path("data/graduation/v2/whatif_cache.json")
+CACHE_PATH = Path(__file__).resolve().parents[1] / "data/graduation/v2/whatif_cache.json"
 CATEGORIES = ["휴학", "수강학기변경", "계절학기", "학점상한", "다전공변경", "성적우수", "기타"]
 
 
@@ -508,7 +508,7 @@ def run_whatif(payload: dict, client=None) -> WhatIfResponse:
     if not question:
         raise ValueError("question이 비어 있습니다.")
     profile = assemble_requirement_profile(ctx)
-    model = os.getenv("OPENAI_GRADUATION_MODEL", "gpt-5-mini")
+    model = os.getenv("OPENAI_GRADUATION_MODEL", "gpt-4o-mini")
     add_ids, drop_ids = _candidates(ctx)
 
     # ① 매개변수 추출기 (LLM 1회, 캐시 우선 — 데모 일관성·오프라인 폴백)

@@ -32,6 +32,7 @@ KEYS = [
     ("NOTION_PORTFOLIO_PAGE_ID", "Notion 포트폴리오 페이지 ID", "32자리"),
     ("TELEGRAM_BOT_TOKEN", "Telegram 봇 토큰", "123456:AA..."),
     ("TELEGRAM_CHAT_ID", "Telegram chat_id", "숫자"),
+    ("OPENAI_GRADUATION_MODEL", "졸업진단 AI 모델(규정해설·총평·what-if, 선택)", "gpt-4o-mini"),
 ]
 with st.form("keys"):
     vals = {}

@@ -219,7 +219,7 @@ def plan_roadmap(planning_context: dict, client=None) -> RoadmapPlan:
     if client is None:
         return RoadmapPlan(status="not_generated",
                            why_this_plan="LLM 미설정(OPENAI_API_KEY 없음) — 결정론 진단/리스크만 제공.")
-    model = os.getenv("OPENAI_GRADUATION_MODEL", "gpt-5-mini")
+    model = os.getenv("OPENAI_GRADUATION_MODEL", "gpt-4o-mini")
     kwargs = {
         "model": model,
         "input": [{"role": "system", "content": _SYS},

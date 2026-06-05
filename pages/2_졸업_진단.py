@@ -146,6 +146,9 @@ if "grad_verify" in st.session_state:
         key="grad_editor",
     )
 
+    use_ai = st.checkbox(
+        "🧠 AI 규정 해설·총평 켜기 (요람 RAG·OpenAI 사용)", value=False,
+        help="끄면 결정론 진단만(빠르고 무료). 켜면 요람 원문 근거 규정해설과 시나리오 기반 에이전트 총평을 리포트에 추가합니다.")
     if st.button("✅ 졸업 진단 실행", type="primary", use_container_width=True):
         for i, r in enumerate(edited):
             if i < len(table):
@@ -153,8 +156,11 @@ if "grad_verify" in st.session_state:
                 table[i]["requirement_area"] = r["이수구분"]
         payload = {**v, "verification_table": table}
         try:
-            with st.spinner("결정론 졸업사정(갭 계산·로드맵·리스크) 중…"):
-                resp = run_audit(payload, client=None, skip_explain=True, run_summary=False)
+            spin = "AI 규정해설·총평까지 생성 중… (요람 검색·LLM 호출로 잠시 걸립니다)" if use_ai \
+                else "결정론 졸업사정(갭 계산·로드맵·리스크) 중…"
+            with st.spinner(spin):
+                resp = run_audit(payload, client=None,
+                                 skip_explain=not use_ai, run_summary=use_ai)
             st.session_state.grad_audit = resp.model_dump()
             store.kv_set("grad_audit", st.session_state.grad_audit)
             store.kv_set("grad_verify", payload)  # 사용자 수정 반영분 저장
@@ -182,3 +188,44 @@ if "grad_audit" in st.session_state:
     st.markdown(d.get("report_markdown", "_리포트를 생성하지 못했습니다._"))
     st.caption("※ 이수 완료 과목은 추천 시스템에 '보유 역량'으로 전달됩니다. "
                "미이수 필수과목은 추천에 반영하지 않습니다(졸업진단에서 해결).")
+
+
+# ── ⑤ What-if 상담 ─────────────────────────────────────────────
+if "grad_verify" in st.session_state:
+    st.divider()
+    st.subheader("⑤ What-if 상담 (가정 시나리오)")
+    st.caption("‘만약 ~하면?’ 가정을 자연어로 물어보면 졸업 영향을 다시 계산합니다. "
+               "예: ‘데이터사이언스 다전공을 빼면?’, ‘다음 학기 휴학하면?’, ‘계절학기를 들으면?’, ‘잔여 학기를 1학기 줄이면?’")
+    wq = st.text_input("가정 질문", key="whatif_q",
+                       placeholder="예: 데이터사이언스 다전공을 포기하면 어떻게 되나요?")
+    if st.button("🔮 What-if 분석", use_container_width=True):
+        if not wq.strip():
+            st.info("질문을 입력해 주세요.")
+        else:
+            try:
+                from graduation_center.v2.whatif import run_whatif
+                payload = {**st.session_state.grad_verify, "question": wq.strip()}
+                with st.spinner("가정 시나리오 재계산 중…"):
+                    wr = run_whatif(payload, client=None)
+                if wr.status != "ok":
+                    st.warning(wr.unsupported_reason or "이 질문은 지원 범위를 벗어났습니다.")
+                else:
+                    if wr.applied_changes:
+                        st.markdown("**적용된 변경:** " + " · ".join(wr.applied_changes))
+                    if wr.assumptions:
+                        st.caption("가정: " + " · ".join(wr.assumptions))
+                    if wr.after is not None:
+                        aa, ar = wr.after.audit, wr.after.risk
+                        cols = st.columns(3)
+                        cols[0].metric("총 이수/필요", f"{aa.total_earned:g} / {aa.total_required:g}")
+                        cols[1].metric("총 부족(변경 후)", f"{aa.total_gap:g}")
+                        cols[2].metric("리스크(변경 후)", f"{ar.grade} {ar.label}")
+                    if wr.next_actions:
+                        st.markdown("**다음 행동**")
+                        for na in wr.next_actions:
+                            st.markdown(f"- {na}")
+                    if wr.after is not None and wr.after.report_markdown:
+                        with st.expander("변경 후 전체 리포트 보기"):
+                            st.markdown(wr.after.report_markdown)
+            except Exception as e:
+                st.error(f"What-if 분석 실패: {e}")
