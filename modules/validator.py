@@ -199,7 +199,11 @@ def validate_schedule(estimated_hours_needed: int, ctx: dict) -> dict:
         calendar_busy = _demo_busy_hours()
         timetable_busy = 0.0
     else:
-        calendar_busy = _real_calendar_busy_hours()
+        try:
+            calendar_busy = _real_calendar_busy_hours()
+        except Exception as exc:
+            print(f"   [validator] Notion 실제 일정 읽기 실패: {exc} → 캘린더 Busy 0h로 계속 진행")
+            calendar_busy = 0.0
         timetable_busy = _timetable_busy_hours()
     busy = calendar_busy + timetable_busy
     acad = academic_calendar.pressure()
