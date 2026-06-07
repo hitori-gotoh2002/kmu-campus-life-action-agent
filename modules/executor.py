@@ -146,10 +146,10 @@ def request_approval(candidate: dict) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# 승인 후 액션: 노션 일정 등록 + 칸반 티켓 생성
+# 승인 후 액션: 노션 일정 등록
 # ---------------------------------------------------------------------------
-def execute_actions(candidate: dict) -> None:
-    """승인 콜백에서 호출되는 최종 자율 실행."""
+def execute_actions(candidate: dict) -> bool:
+    """승인 콜백에서 호출되는 최종 자율 실행. 새 Notion 페이지를 만들었으면 True."""
     n = candidate["notice"]
     a = candidate["analysis"]
 
@@ -157,7 +157,7 @@ def execute_actions(candidate: dict) -> None:
         print("[6] 승인 - 캘린더 등록 (demo)")
         print(f"   [calendar] '{n.title} 준비' {a.estimated_hours_needed}h 캘린더 등록(demo)")
         print("   [info] 추천 상세(근거·체크리스트·초안)는 웹/백엔드에서 열람\n")
-        return
+        return True
 
     details = calendar_summary.build_event_details(candidate)
     created = _create_notion_schedule_block(n, a.estimated_hours_needed, details)
@@ -165,6 +165,7 @@ def execute_actions(candidate: dict) -> None:
         print("   [executor] 노션 캘린더에 일정 + 요약 설명 등록 완료")
     else:
         print("   [executor] 이미 등록된 일정으로 판단해 중복 생성 생략")
+    return created
 
 
 def _ensure_detail_properties(notion, database_id: str) -> set[str]:

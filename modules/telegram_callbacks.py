@@ -135,18 +135,20 @@ def handle_callback(callback: dict) -> str:
         _log(f"[callback] rejected title={row['title'][:80]} url={row['url']}")
         return "rejected"
 
-    if row.get("status") == "승인":
-        _log(f"[callback] already_approved title={row['title'][:80]} url={row['url']}")
-        return "already_approved"
+    was_approved = row.get("status") == "승인"
 
     try:
-        executor.execute_actions(_candidate_from_row(row))
+        created = executor.execute_actions(_candidate_from_row(row))
     except Exception as e:
         _log(
             f"[callback] execute_failed title={row['title'][:80]} url={row['url']} "
             f"error={type(e).__name__}: {e}\n{traceback.format_exc().rstrip()}"
         )
         return "execute_failed"
+    if was_approved:
+        result = "approved_restored" if created else "already_approved"
+        _log(f"[callback] {result} title={row['title'][:80]} url={row['url']}")
+        return result
     history.mark(row["url"], "승인")
     _log(f"[callback] approved title={row['title'][:80]} url={row['url']}")
     return "approved"
@@ -180,6 +182,7 @@ def poll_once(timeout: int = 0, acknowledge: bool = True) -> dict:
         result = handle_callback(cb)
         answer = {
             "approved": "노션 캘린더에 추가했어요.",
+            "approved_restored": "노션 캘린더에 다시 추가했어요.",
             "already_approved": "이미 처리된 추천이에요.",
             "rejected": "추천을 무시 처리했어요.",
             "not_found": "추천 이력을 찾지 못했어요.",
@@ -193,7 +196,7 @@ def poll_once(timeout: int = 0, acknowledge: bool = True) -> dict:
             )
         except Exception:
             pass
-        if result in {"approved", "already_approved", "rejected"}:
+        if result in {"approved", "approved_restored", "already_approved", "rejected"}:
             handled += 1
             ack_update_id = update_id
         elif result not in {"not_found", "execute_failed"}:
