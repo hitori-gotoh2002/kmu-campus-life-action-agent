@@ -156,12 +156,18 @@ if "grad_verify" in st.session_state:
     use_ai = st.checkbox(
         "🧠 AI 규정 해설·총평 켜기 (요람 RAG·OpenAI 사용)", value=False,
         help="끄면 결정론 진단만(빠르고 무료). 켜면 요람 원문 근거 규정해설과 시나리오 기반 에이전트 총평을 리포트에 추가합니다.")
+    st.caption("ℹ️ 위 ① 내 정보(평점·남은학기·계절학기 등)를 바꾸면 **재업로드 없이 '졸업 진단 실행'만 다시** 누르면 반영됩니다. "
+               "단 **학과(제1전공)를 바꿀 때만** '검증표 만들기'를 다시 눌러야 합니다(과목 매칭 기준이 바뀌므로).")
     if st.button("✅ 졸업 진단 실행", type="primary", use_container_width=True):
         for i, r in enumerate(editor_rows(edited)):
             if i < len(table):
                 table[i]["included"] = bool(r["포함"])
                 table[i]["requirement_area"] = r["이수구분"]
-        payload = {**v, "verification_table": table}
+        # 진단 실행 시점의 '내 정보'를 항상 반영(평점·남은학기·계절 등). 단 학과(program_id)는
+        # 검증표 매칭 기준과 일치해야 하므로 검증표 생성 당시 값을 유지한다.
+        v_ctx = v.get("context", {})
+        audit_ctx = {**ctx, "program_id": v_ctx.get("program_id", ctx["program_id"])}
+        payload = {**v, "context": audit_ctx, "verification_table": table}
         try:
             spin = "AI 규정해설·총평까지 생성 중… (요람 검색·LLM 호출로 잠시 걸립니다)" if use_ai \
                 else "결정론 졸업사정(갭 계산·로드맵·리스크) 중…"
